@@ -1,0 +1,479 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #2c3e50;
+    font-size: 2em;
+}
+
+h2 {
+    color: #34495e;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 5px;
+}
+
+h3 {
+    color: #7f8c8d;
+    margin: 15px 0 10px 0;
+    font-size: 1.1em;
+}
+
+/* Section styles */
+.section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #fafafa;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+/* Button styles */
+.btn {
+    padding: 10px 16px;
+    margin: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    background: #95a5a6;
+    color: white;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* Button color variations */
+.btn-primary {
+    background: #27ae60;
+}
+
+.btn-primary:hover {
+    background: #229954;
+}
+
+.btn-secondary {
+    background: #e74c3c;
+}
+
+.btn-secondary:hover {
+    background: #c0392b;
+}
+
+.btn-nav {
+    background: #3498db;
+}
+
+.btn-nav:hover {
+    background: #2980b9;
+}
+
+.btn-info {
+    background: #f39c12;
+}
+
+.btn-info:hover {
+    background: #e67e22;
+}
+
+.btn-monitor {
+    background: #8e44ad;
+}
+
+.btn-monitor:hover {
+    background: #7d3c98;
+}
+
+.btn-timer {
+    background: #16a085;
+}
+
+.btn-timer:hover {
+    background: #138d75;
+}
+
+.btn-ws {
+    background: #2c3e50;
+}
+
+.btn-ws:hover {
+    background: #1a252f;
+}
+
+.btn-clear {
+    background: #95a5a6;
+}
+
+.btn-clear:hover {
+    background: #7f8c8d;
+}
+
+/* Layout groups */
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.input-group input {
+    padding: 10px;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 150px;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Response display */
+.response-container {
+    margin-bottom: 15px;
+}
+
+#responseDisplay {
+    background: #2c3e50;
+    color: #ecf0f1;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #34495e;
+}
+
+/* WebSocket status */
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.status-connected {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.status-disconnected {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+/* WebSocket messages */
+.websocket-log {
+    margin-top: 20px;
+}
+
+.ws-messages {
+    background: #34495e;
+    color: #ecf0f1;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #2c3e50;
+    margin-bottom: 10px;
+}
+
+.ws-message {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #4a5f7a;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.ws-message:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        padding: 20px;
+    }
+    
+    .button-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .btn {
+        margin: 5px 0;
+    }
+    
+    .input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .input-group input {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .status-indicator {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    h1 {
+        font-size: 1.5em;
+    }
+}
+
+/* Utility classes */
+.mt-20 {
+    margin-top: 20px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Scrollbar styling for webkit browsers */
+.ws-messages::-webkit-scrollbar,
+#responseDisplay::-webkit-scrollbar {
+    width: 8px;
+}
+
+.ws-messages::-webkit-scrollbar-track,
+#responseDisplay::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.ws-messages::-webkit-scrollbar-thumb,
+#responseDisplay::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.ws-messages::-webkit-scrollbar-thumb:hover,
+#responseDisplay::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* File Browser Styles */
+.file-browser {
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.browser-controls {
+    background: #ecf0f1;
+    padding: 15px;
+    border-bottom: 1px solid #bdc3c7;
+}
+
+.btn-file {
+    background: #8e44ad;
+    margin-right: 10px;
+}
+
+.btn-file:hover {
+    background: #7d3c98;
+}
+
+.current-path {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 14px;
+    color: #495057;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.file-list {
+    max-height: 400px;
+    overflow-y: auto;
+    background: #ffffff;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s ease;
+    min-height: 50px;
+}
+
+.file-item:last-child {
+    border-bottom: none;
+}
+
+.file-item:hover {
+    background: #f8f9fa;
+}
+
+.file-item.directory {
+    cursor: pointer;
+}
+
+.file-item.directory:hover {
+    background: #e3f2fd;
+}
+
+.file-item.keynote-file {
+    background: #fff3e0;
+    border-left: 3px solid #ff9800;
+}
+
+.file-item.keynote-file:hover {
+    background: #ffe0b2;
+}
+
+.file-item.powerpoint-file {
+    background: #f3e5f5;
+    border-left: 3px solid #9c27b0;
+}
+
+.file-item.powerpoint-file:hover {
+    background: #e1bee7;
+}
+
+.file-item.parent {
+    background: #f0f4f8;
+    font-weight: bold;
+}
+
+.file-item.parent:hover {
+    background: #dbe7f0;
+}
+
+.file-item.empty {
+    justify-content: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 30px 15px;
+}
+
+.file-icon {
+    font-size: 24px;
+    margin-right: 12px;
+    min-width: 32px;
+    text-align: center;
+}
+
+.file-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-name {
+    font-weight: 500;
+    color: #2c3e50;
+    margin-bottom: 4px;
+    word-wrap: break-word;
+}
+
+.file-path {
+    font-size: 12px;
+    color: #7f8c8d;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    margin-bottom: 4px;
+    word-wrap: break-word;
+}
+
+.file-meta {
+    font-size: 11px;
+    color: #95a5a6;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+    margin-left: 10px;
+    min-width: 60px;
+}
+
+.btn-open {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-open:hover {
+    background: #229954;
+}
+
+/* File list scrollbar */
+.file-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.file-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.file-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.file-list::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+} 

@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keymote Controller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/styles.css">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- iOS Safari PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Keymote">
+    <meta name="theme-color" content="#FFD700">
+    <meta name="msapplication-TileColor" content="#1a1a1a">
+    
+    <!-- iOS Safari PWA Icons -->
+    <link rel="apple-touch-icon" sizes="152x152" href="static/images/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="static/images/icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="static/images/icon-167x167.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="static/images/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="static/images/icon-16x16.png">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="hamburger" id="hamburger-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="logo">
+                <img src="static/images/keymotelogo.png" alt="Keymote" />
+            </div>
+            
+            <!-- Dropdown Menu -->
+            <div class="dropdown-menu" id="dropdown-menu">
+                <div class="menu-item" onclick="openPresentation()">
+                    <span class="menu-icon">📁</span>
+                    <span class="menu-text">Open Presentation</span>
+                </div>
+                <div class="menu-item" id="stop-presentation-menu" onclick="stopPresentationFromMenu()" style="display: none;">
+                    <span class="menu-icon">🛑</span>
+                    <span class="menu-text">Stop Presentation</span>
+                </div>
+                <div class="menu-item" onclick="showAbout()">
+                    <span class="menu-icon">ℹ️</span>
+                    <span class="menu-text">About</span>
+                </div>
+                <div class="menu-item" onclick="showHelp()">
+                    <span class="menu-icon">❓</span>
+                    <span class="menu-text">Help</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Time Display -->
+        <div class="time-display">
+            <div class="time-numbers">
+                <div class="digit-grid">
+                    <span class="time-digit gray" id="hours-tens">0</span>
+                    <span class="time-digit gray" id="hours-ones">0</span>
+                    <span class="time-label gray">h</span>
+                    <span class="time-digit green" id="minutes-tens">0</span>
+                    <span class="time-digit green" id="minutes-ones">0</span>
+                    <span class="time-label green">m</span>
+                    <span class="time-digit white" id="seconds-tens">0</span>
+                    <span class="time-digit white" id="seconds-ones">0</span>
+                    <span class="time-label white">s</span>
+                </div>
+            </div>
+            <div class="time-info-section">
+                <div class="time-info">
+                    <span class="label yellow">Current Slide</span>
+                    <span class="value white" id="current-slide-display">--</span>
+                </div>
+                <div class="time-info">
+                    <span class="label yellow">Total Slides</span>
+                    <span class="value white" id="total-slides-display">--</span>
+                </div>
+                <div class="time-info">
+                    <span class="label yellow">Total Time</span>
+                    <span class="value white" id="total-time-display">0:00:00</span>
+                </div>
+                <div class="time-info">
+                    <span class="label yellow">Tracking</span>
+                    <span class="value white" id="tracking-display">0:00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="controls">
+            <button class="control-btn" id="start-btn" onclick="goToFirstSlide()">
+                <img src="static/images/start.svg" alt="First Slide" />
+            </button>
+            <button class="control-btn" id="previous-btn" onclick="previousSlide()">
+                <img src="static/images/previous.svg" alt="Previous" />
+            </button>
+            <button class="control-btn" id="play-pause-btn" onclick="togglePlayPause()">
+                <img src="static/images/play.svg" alt="Play" id="play-pause-icon" />
+            </button>
+            <button class="control-btn" id="next-btn" onclick="nextSlide()">
+                <img src="static/images/next.svg" alt="Next" />
+            </button>
+            <button class="control-btn" id="end-btn" onclick="goToLastSlide()">
+                <img src="static/images/end.svg" alt="Last Slide" />
+            </button>
+        </div>
+
+        <!-- Slide Progress Container -->
+        <div class="slides-container" id="slides-container">
+            <!-- Slides will be dynamically generated here -->
+            <div class="no-presentation-message" id="no-presentation-message" style="text-align: center; padding: 40px; color: #888; font-style: italic;">
+                No presentation loaded. Use the menu to open a presentation.
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO for real-time updates -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    
+    <script>
+        // Global variables
+        let currentSlideIndex = 1;
+        let totalSlides = 0;
+        let timingData = {};
+        let socket = null;
+
+        // Timer variables
+        let timerInterval = null;
+        let presentationStartTime = null;
+        let totalElapsedSeconds = 0;
+        let isPaused = false;
+        let pauseStartTime = null;
+        let totalPausedTime = 0;
+
+        // API connection functions
+        async function fetchCurrentSlide() {
+            try {
+                const response = await fetch('/current_slide_number');
+                const data = await response.json();
+                
+                if (data.status === "success" && data.slideNumber !== null && data.slideNumber !== undefined) {
+                    const newSlideIndex = parseInt(data.slideNumber);
+                    const slideChanged = newSlideIndex !== currentSlideIndex;
+                    
+                    currentSlideIndex = newSlideIndex;
+                    document.getElementById('current-slide-display').textContent = data.slideNumber;
+                    updateCurrentSlideHighlight();
+                    
+                    // Scroll to current slide if it changed
+                    if (slideChanged) {
+                        scrollToCurrentSlide();
+                    }
+                } else {
+                    // No presentation open - reset current slide
+                    currentSlideIndex = 0;
+                    document.getElementById('current-slide-display').textContent = '--';
+                }
+            } catch (error) {
+                console.error('Error fetching current slide:', error);
+                currentSlideIndex = 0;
+                document.getElementById('current-slide-display').textContent = '--';
+            }
+        }
+
+        async function fetchTotalSlides() {
+            try {
+                const response = await fetch('/total_slides');
+                const data = await response.json();
+                
+                if (data.status === "success" && data.totalSlides !== null && data.totalSlides !== undefined) {
+                    totalSlides = parseInt(data.totalSlides);
+                    document.getElementById('total-slides-display').textContent = data.totalSlides;
+                } else {
+                    totalSlides = 0;
+                    document.getElementById('total-slides-display').textContent = '--';
+                }
+                
+                // Update menu visibility whenever total slides changes
+                updateMenuVisibility();
+            } catch (error) {
+                console.error('Error fetching total slides:', error);
+                totalSlides = 0;
+                document.getElementById('total-slides-display').textContent = '--';
+                updateMenuVisibility();
+            }
+        }
+
+        // Update both slide numbers
+        async function updateSlideInfo() {
+            await Promise.all([
+                fetchCurrentSlide(),
+                fetchTotalSlides()
+            ]);
+        }
+
+        // Reset timer display to 00:00:00
+        function resetTimerDisplay() {
+            // Reset large digit display
+            document.getElementById('hours-tens').textContent = '0';
+            document.getElementById('hours-ones').textContent = '0';
+            document.getElementById('minutes-tens').textContent = '0';
+            document.getElementById('minutes-ones').textContent = '0';
+            document.getElementById('seconds-tens').textContent = '0';
+            document.getElementById('seconds-ones').textContent = '0';
+            
+            // Reset time info displays
+            document.getElementById('total-time-display').textContent = '0:00:00';
+            document.getElementById('tracking-display').textContent = '0:00';
+        }
+
+        // Clear slides display
+        function clearSlides() {
+            const container = document.getElementById('slides-container');
+            container.innerHTML = '<div class="no-presentation-message" id="no-presentation-message" style="text-align: center; padding: 40px; color: #888; font-style: italic;">No presentation loaded. Use the menu to open a presentation.</div>';
+            
+            // Update menu visibility after clearing slides
+            updateMenuVisibility();
+        }
+
+        // Generate slide elements dynamically
+        function generateSlides(slideCount, timings = {}) {
+            const container = document.getElementById('slides-container');
+            const noMessageElement = document.getElementById('no-presentation-message');
+            
+            // Remove "no presentation" message
+            if (noMessageElement) {
+                noMessageElement.remove();
+            }
+            
+            // Clear existing slides
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= slideCount; i++) {
+                const slideElement = document.createElement('div');
+                slideElement.className = 'slide-progress editable-slide';
+                slideElement.id = `slide-${i}`;
+                
+                // Get timing for this slide (default to 1:00 if not available)
+                const slideTimingSeconds = timings[i] || 60;
+                const minutes = Math.floor(slideTimingSeconds / 60);
+                const seconds = slideTimingSeconds % 60;
+                const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                slideElement.innerHTML = `
+                    <span class="slide-label">Slide: <span class="slide-number">${i}</span></span>
+                    <span class="progress-time editable-time" data-original="${timeDisplay}">${timeDisplay}</span>
+                    <button class="edit-icon" onclick="editTime('slide-${i}')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                `;
+                
+                // Add click handler for navigation to slide
+                slideElement.addEventListener('click', function(event) {
+                    // Don't trigger navigation if clicking on the edit button
+                    if (event.target.closest('.edit-icon')) {
+                        return;
+                    }
+                    
+                    // Don't trigger navigation if currently editing time
+                    if (slideElement.classList.contains('editing')) {
+                        return;
+                    }
+                    
+                    navigateToSlide(i);
+                });
+                
+                // Add cursor pointer style for clickable slides
+                slideElement.style.cursor = 'pointer';
+                
+                container.appendChild(slideElement);
+            }
+            
+            // Update current slide highlight
+            updateCurrentSlideHighlight();
+            
+            // Update menu visibility after generating slides
+            updateMenuVisibility();
+        }
+
+        // Update current slide highlighting
+        function updateCurrentSlideHighlight() {
+            // Remove current highlighting
+            document.querySelectorAll('.slide-progress').forEach(slide => {
+                slide.classList.remove('current-slide');
+                const slideNumber = slide.querySelector('.slide-number');
+                if (slideNumber) {
+                    slideNumber.classList.remove('yellow');
+                }
+            });
+            
+            // Add highlighting to current slide
+            const currentSlideElement = document.getElementById(`slide-${currentSlideIndex}`);
+            if (currentSlideElement) {
+                currentSlideElement.classList.add('current-slide');
+                const slideNumber = currentSlideElement.querySelector('.slide-number');
+                if (slideNumber) {
+                    slideNumber.classList.add('yellow');
+                }
+            }
+        }
+
+        // Scroll the current slide to the top of the slides container
+        function scrollToCurrentSlide() {
+            const currentSlideElement = document.getElementById(`slide-${currentSlideIndex}`);
+            const slidesContainer = document.getElementById('slides-container');
+            
+            if (slidesContainer && currentSlideElement) {
+                // Add a small offset so the slide isn't right at the edge
+                const topOffset = 8;
+                
+                // Calculate position using getBoundingClientRect for accurate positioning
+                const containerRect = slidesContainer.getBoundingClientRect();
+                const slideRect = currentSlideElement.getBoundingClientRect();
+                
+                // Calculate how far the slide is from the top of the container
+                const currentScrollTop = slidesContainer.scrollTop;
+                const slideRelativeTop = slideRect.top - containerRect.top;
+                
+                // Calculate target scroll position to move slide to top of container
+                const targetScrollTop = currentScrollTop + slideRelativeTop - topOffset;
+                
+                // Scroll to position the current slide at the top
+                slidesContainer.scrollTo({
+                    top: Math.max(0, targetScrollTop),
+                    behavior: 'smooth'
+                });
+                
+                console.log(`📜 Scrolled to slide ${currentSlideIndex}:`, {
+                    slideId: currentSlideElement.id,
+                    currentScrollTop: currentScrollTop,
+                    slideRelativeTop: slideRelativeTop,
+                    targetScrollTop: targetScrollTop,
+                    finalPosition: Math.max(0, targetScrollTop)
+                });
+            }
+        }
+
+        // Load timing file and generate slides
+        async function loadTimingFileAndUpdateTotal() {
+            try {
+                // First, load the slide timings
+                const timingResponse = await fetch('/slide_timings/load', {
+                    method: 'POST'
+                });
+                const timingData = await timingResponse.json();
+                
+                if (timingData.status === 'success') {
+                    // Store timing data globally
+                    window.timingData = timingData.plannedTimings || {};
+                    
+                    if (timingData.totalPlannedTime) {
+                        // Convert seconds to hours:minutes:seconds format
+                        const totalSeconds = timingData.totalPlannedTime;
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const seconds = Math.floor(totalSeconds % 60);
+                        
+                        const formattedTime = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                        document.getElementById('total-time-display').textContent = formattedTime;
+                        
+                        console.log(`✅ Loaded timing for ${Object.keys(timingData.plannedTimings || {}).length} slides, total time: ${formattedTime}`);
+                    }
+                    
+                    // If we have slides and timing data, generate slides
+                    if (totalSlides > 0) {
+                        generateSlides(totalSlides, timingData.plannedTimings || {});
+                    }
+                } else {
+                    console.log('⚠️ No timing data available or error loading timings');
+                    document.getElementById('total-time-display').textContent = '0:00:00';
+                    window.timingData = {};
+                    
+                    // If we have slides but no timing data, still generate slides with defaults
+                    if (totalSlides > 0) {
+                        generateSlides(totalSlides, {});
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading timing file:', error);
+                document.getElementById('total-time-display').textContent = '0:00:00';
+                window.timingData = {};
+                
+                // If we have slides but timing loading failed, still generate slides
+                if (totalSlides > 0) {
+                    generateSlides(totalSlides, {});
+                }
+            }
+        }
+
+        // Check if we just returned from opening a presentation
+        function checkForNewPresentation() {
+            // Check if there's a flag indicating we just opened a presentation
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('presentation_opened') === 'true') {
+                // Reset timer when opening a new presentation
+                resetTimer();
+                
+                // Update slide info and load timing file
+                setTimeout(async () => {
+                    await updateSlideInfo();
+                    await loadTimingFileAndUpdateTotal();
+                }, 1000); // Small delay to ensure backend has processed the file
+                
+                // Remove the parameter from URL without refreshing
+                const url = new URL(window.location);
+                url.searchParams.delete('presentation_opened');
+                window.history.replaceState({}, document.title, url);
+            }
+        }
+
+        // Hamburger menu functionality
+        function toggleMenu() {
+            const hamburger = document.getElementById('hamburger-menu');
+            const dropdown = document.getElementById('dropdown-menu');
+            
+            hamburger.classList.toggle('active');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const hamburger = document.getElementById('hamburger-menu');
+            const dropdown = document.getElementById('dropdown-menu');
+            
+            if (!hamburger.contains(event.target) && !dropdown.contains(event.target)) {
+                hamburger.classList.remove('active');
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Menu item functions
+        function openPresentation() {
+            // Close the hamburger menu
+            toggleMenu();
+            
+            // Navigate to the open presentation page
+            window.location.href = '/open-presentation';
+        }
+
+        async function stopPresentationFromMenu() {
+            // Close the hamburger menu
+            toggleMenu();
+            
+            try {
+                console.log('🛑 Stopping presentation...');
+                await stopPresentation();
+                console.log('✅ Presentation stopped from menu');
+            } catch (error) {
+                console.error('❌ Error stopping presentation from menu:', error);
+                alert('Error stopping presentation. Make sure Keynote is running.');
+            }
+        }
+
+        function showAbout() {
+            alert('About Keymote Controller\n\nVersion 1.0\n\nA professional presentation timing and control interface for Keynote presentations.\n\nFeatures:\n• Real-time slide tracking\n• Presentation timing\n• Remote control capabilities\n• Custom slide timing\n• Professional design');
+            toggleMenu();
+        }
+
+        function showHelp() {
+            alert('Keymote Controller Help\n\nHow to use:\n\n1. Open Presentation: Use the menu to select your Keynote file\n2. Current/Total Slides: Shows live slide information\n3. Control Buttons: Navigate through your presentation\n4. Timing: Track your presentation progress\n5. Slide List: View and edit individual slide timings\n6. Click Slides: Click any slide label to jump directly to that slide\n\nTip: Make sure Keynote is running and a presentation is open for live tracking to work.');
+            toggleMenu();
+        }
+
+        // Update menu visibility based on presentation state
+        function updateMenuVisibility() {
+            const stopPresentationMenu = document.getElementById('stop-presentation-menu');
+            if (stopPresentationMenu) {
+                // Show "Stop Presentation" only when presentation is actively running
+                if (isPresentationMode && isPlaying) {
+                    stopPresentationMenu.style.display = 'block';
+                } else {
+                    stopPresentationMenu.style.display = 'none';
+                }
+            }
+        }
+
+        // Add functions to window for debugging from browser console
+        window.timerDebug = {
+            startTimer: startTimer,
+            stopTimer: stopTimer,
+            resetTimer: resetTimer,
+            getTimerState: function() {
+                return {
+                    timerInterval: !!timerInterval,
+                    presentationStartTime: presentationStartTime,
+                    totalElapsedSeconds: totalElapsedSeconds,
+                    isPaused: isPaused,
+                    pauseStartTime: pauseStartTime,
+                    totalPausedTime: totalPausedTime,
+                    isPresentationMode: isPresentationMode,
+                    isPlaying: isPlaying
+                };
+            }
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialize UI state
+            updatePlayPauseButton();
+            
+            // Initialize WebSocket connection for real-time updates
+            initializeWebSocket();
+            
+            // Check if we returned from opening a presentation
+            checkForNewPresentation();
+            
+            // Get slide info first
+            await updateSlideInfo();
+            
+            // If we have slides, generate them
+            if (totalSlides > 0) {
+                await loadTimingFileAndUpdateTotal();
+            } else {
+                // No presentation loaded, show message
+                clearSlides();
+            }
+            
+            // Update every 2 seconds
+            setInterval(async () => {
+                const oldTotalSlides = totalSlides;
+                const oldCurrentSlide = currentSlideIndex;
+                await updateSlideInfo();
+                
+                // Check if presentation was closed (no slides detected)
+                if (totalSlides === 0 && (oldTotalSlides > 0 || oldCurrentSlide > 0)) {
+                    console.log('📄 Presentation closed detected via polling - resetting UI');
+                    
+                    // Reset all displays when presentation is closed
+                    resetTimer();
+                    document.getElementById('total-time-display').textContent = '0:00:00';
+                    document.getElementById('tracking-display').textContent = '0:00';
+                    
+                    // Reset presentation state
+                    isPresentationMode = false;
+                    isPlaying = false;
+                    updatePlayPauseButton();
+                    
+                    // Clear timing data
+                    window.timingData = {};
+                    
+                    // Clear slides
+                    clearSlides();
+                }
+                // If slide count changed and we have slides, regenerate them
+                else if (totalSlides !== oldTotalSlides) {
+                    if (totalSlides > 0) {
+                        await loadTimingFileAndUpdateTotal();
+                    } else {
+                        clearSlides();
+                        // Also reset Total Time when clearing slides
+                        document.getElementById('total-time-display').textContent = '0:00:00';
+                        window.timingData = {};
+                    }
+                }
+            }, 2000);
+            
+            // Add hamburger menu click listener
+            document.getElementById('hamburger-menu').addEventListener('click', toggleMenu);
+        });
+
+        // Cleanup timer on page unload
+        window.addEventListener('beforeunload', function() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+        });
+
+        // Global state tracking
+        let isPresentationMode = false;
+        let isPlaying = false;
+
+        // Control button functions
+        async function goToFirstSlide() {
+            try {
+                console.log('⏮️ Going to first slide...');
+                const response = await fetch('/goto_slide/1');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    console.log('✅ Moved to first slide');
+                    // Update will happen automatically via monitoring
+                } else {
+                    console.error('❌ Failed to go to first slide:', data.message);
+                    alert('Failed to go to first slide: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('❌ Error going to first slide:', error);
+                alert('Error going to first slide. Make sure Keynote is running.');
+            }
+        }
+
+        async function goToLastSlide() {
+            try {
+                console.log('⏭️ Going to last slide...');
+                
+                // First get the total number of slides
+                const totalSlidesResponse = await fetch('/total_slides');
+                const totalSlidesData = await totalSlidesResponse.json();
+                
+                if (totalSlidesData.status !== 'success' || !totalSlidesData.totalSlides) {
+                    alert('Could not determine total slides. Make sure a presentation is open.');
+                    return;
+                }
+                
+                const lastSlideNumber = totalSlidesData.totalSlides;
+                
+                // Now go to the last slide
+                const response = await fetch(`/goto_slide/${lastSlideNumber}`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    console.log(`✅ Moved to last slide (${lastSlideNumber})`);
+                    // Update will happen automatically via monitoring
+                } else {
+                    console.error('❌ Failed to go to last slide:', data.message);
+                    alert('Failed to go to last slide: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('❌ Error going to last slide:', error);
+                alert('Error going to last slide. Make sure Keynote is running.');
+            }
+        }
+
+        // Navigate to a specific slide by clicking on slide label
+        async function navigateToSlide(slideNumber) {
+            try {
+                console.log(`🎯 Navigating to slide ${slideNumber}...`);
+                
+                // Visual feedback - add a temporary class to show the slide is being selected
+                const slideElement = document.getElementById(`slide-${slideNumber}`);
+                if (slideElement) {
+                    slideElement.classList.add('navigating');
+                }
+                
+                const response = await fetch(`/goto_slide/${slideNumber}`);
+                const data = await response.json();
+                
+                                    if (data.status === 'success') {
+                        console.log(`✅ Successfully navigated to slide ${slideNumber}: ${data.message}`);
+                        // Update will happen automatically via monitoring/WebSocket
+                    } else {
+                    console.error(`❌ Failed to navigate to slide ${slideNumber}:`, data.message);
+                    alert(`Failed to navigate to slide ${slideNumber}: ` + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error(`❌ Error navigating to slide ${slideNumber}:`, error);
+                alert(`Error navigating to slide ${slideNumber}. Make sure Keynote is running.`);
+            } finally {
+                // Remove visual feedback after a short delay
+                setTimeout(() => {
+                    const slideElement = document.getElementById(`slide-${slideNumber}`);
+                    if (slideElement) {
+                        slideElement.classList.remove('navigating');
+                    }
+                }, 500);
+            }
+        }
+
+        async function nextSlide() {
+            try {
+                console.log('➡️ Moving to next slide...');
+                
+                // Check if we know the current slide and total slides
+                if (currentSlideIndex >= 1 && totalSlides >= 1) {
+                    const nextSlideNumber = currentSlideIndex + 1;
+                    
+                    // Check if we're already at the last slide
+                    if (nextSlideNumber > totalSlides) {
+                        console.log('⚠️ Already at the last slide');
+                        alert(`Already at the last slide (${totalSlides})`);
+                        return;
+                    }
+                    
+                    // Use goto_slide for better control and error handling
+                    const response = await fetch(`/goto_slide/${nextSlideNumber}`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        console.log(`✅ Moved to next slide (${nextSlideNumber}): ${data.message}`);
+                        // Update will happen automatically via monitoring
+                    } else {
+                        console.error('❌ Failed to move to next slide:', data.message);
+                        alert('Failed to move to next slide: ' + (data.message || 'Unknown error'));
+                    }
+                } else {
+                    // Fallback to the original next_slide endpoint if we don't have slide info
+                    console.log('Using fallback next_slide endpoint...');
+                    const response = await fetch('/next_slide');
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        console.log('✅ Moved to next slide');
+                        // Update will happen automatically via monitoring
+                    } else {
+                        console.error('❌ Failed to move to next slide:', data.message);
+                        alert('Failed to move to next slide: ' + (data.message || 'Unknown error'));
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error moving to next slide:', error);
+                alert('Error moving to next slide. Make sure Keynote is running.');
+            }
+        }
+
+        async function previousSlide() {
+            try {
+                console.log('⬅️ Moving to previous slide...');
+                
+                // Check if we know the current slide and total slides
+                if (currentSlideIndex >= 1 && totalSlides >= 1) {
+                    const previousSlideNumber = currentSlideIndex - 1;
+                    
+                    // Check if we're already at the first slide
+                    if (previousSlideNumber < 1) {
+                        console.log('⚠️ Already at the first slide');
+                        alert('Already at the first slide (1)');
+                        return;
+                    }
+                    
+                    // Use goto_slide for better control and error handling
+                    const response = await fetch(`/goto_slide/${previousSlideNumber}`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        console.log(`✅ Moved to previous slide (${previousSlideNumber}): ${data.message}`);
+                        // Update will happen automatically via monitoring
+                    } else {
+                        console.error('❌ Failed to move to previous slide:', data.message);
+                        alert('Failed to move to previous slide: ' + (data.message || 'Unknown error'));
+                    }
+                } else {
+                    // Fallback to the original previous_slide endpoint if we don't have slide info
+                    console.log('Using fallback previous_slide endpoint...');
+                    const response = await fetch('/previous_slide');
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        console.log('✅ Moved to previous slide');
+                        // Update will happen automatically via monitoring
+                    } else {
+                        console.error('❌ Failed to move to previous slide:', data.message);
+                        alert('Failed to move to previous slide: ' + (data.message || 'Unknown error'));
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error moving to previous slide:', error);
+                alert('Error moving to previous slide. Make sure Keynote is running.');
+            }
+        }
+
+        async function startPresentation() {
+            try {
+                console.log('🎬 Starting presentation...');
+                const response = await fetch('/start_presentation');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    isPresentationMode = true;
+                    isPlaying = true;
+                    updatePlayPauseButton();
+                    updateMenuVisibility();
+                    
+                    // Start the timer
+                    startTimer();
+                    
+                    console.log('✅ Presentation started successfully');
+                    
+                    // Refresh slide info after starting
+                    await updateSlideInfo();
+                } else {
+                    console.error('❌ Failed to start presentation:', data.message);
+                    alert('Failed to start presentation: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('❌ Error starting presentation:', error);
+                alert('Error starting presentation. Make sure Keynote is running.');
+            }
+        }
+
+        async function stopPresentation() {
+            try {
+                console.log('🛑 Stopping presentation...');
+                const response = await fetch('/stop_presentation');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    isPresentationMode = false;
+                    isPlaying = false;
+                    updatePlayPauseButton();
+                    updateMenuVisibility();
+                    
+                    // Stop/pause the timer
+                    stopTimer();
+                    
+                    console.log('✅ Presentation stopped successfully');
+                    
+                    // Refresh slide info after stopping
+                    await updateSlideInfo();
+                } else {
+                    console.error('❌ Failed to stop presentation:', data.message);
+                    alert('Failed to stop presentation: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('❌ Error stopping presentation:', error);
+                alert('Error stopping presentation. Make sure Keynote is running.');
+            }
+        }
+
+        async function togglePlayPause() {
+            if (!isPresentationMode) {
+                // If not in presentation mode, start it
+                await startPresentation();
+            } else {
+                // In presentation mode, toggle play/pause
+                if (isPlaying) {
+                    // Currently playing, so pause (stop)
+                    await stopPresentation();
+                } else {
+                    // Currently paused, so play (start)
+                    await startPresentation();
+                }
+            }
+        }
+
+        function updatePlayPauseButton() {
+            const playPauseIcon = document.getElementById('play-pause-icon');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            
+            if (isPresentationMode && isPlaying) {
+                // Show pause icon when presentation is playing
+                playPauseIcon.src = 'static/images/pause.svg';
+                playPauseIcon.alt = 'Pause';
+                playPauseBtn.title = 'Pause Presentation';
+            } else {
+                // Show play icon when not playing or not in presentation mode
+                playPauseIcon.src = 'static/images/play.svg';
+                playPauseIcon.alt = 'Play';
+                playPauseBtn.title = 'Start Presentation';
+            }
+        }
+
+        // WebSocket initialization and event handlers
+        function initializeWebSocket() {
+            try {
+                socket = io();
+                
+                socket.on('connect', function() {
+                    console.log('🔗 Connected to WebSocket server');
+                });
+                
+                socket.on('disconnect', function() {
+                    console.log('🔌 Disconnected from WebSocket server');
+                });
+                
+                socket.on('connect_error', function(error) {
+                    console.error('❌ WebSocket connection error:', error);
+                });
+                
+                socket.on('slide_changed', function(data) {
+                    console.log('📍 Slide changed event:', data);
+                    const oldSlideIndex = currentSlideIndex;
+                    
+                    currentSlideIndex = data.slideNumber;
+                    totalSlides = data.totalSlides;
+                    
+                    // Update UI
+                    document.getElementById('current-slide-display').textContent = data.slideNumber;
+                    document.getElementById('total-slides-display').textContent = data.totalSlides;
+                    updateCurrentSlideHighlight();
+                    
+                    // Update tracking display if timer is running
+                    if (presentationStartTime) {
+                        updateTrackingDisplay();
+                    }
+                    
+                    // Scroll to current slide if it actually changed
+                    if (oldSlideIndex !== currentSlideIndex) {
+                        scrollToCurrentSlide();
+                    }
+                    
+                    // Update presentation state if provided
+                    if (data.presentationRunning !== undefined) {
+                        isPresentationMode = data.presentationRunning;
+                        isPlaying = data.presentationRunning;
+                        updatePlayPauseButton();
+                    }
+                });
+                
+                socket.on('presentation_started', function(data) {
+                    console.log('🎬 Presentation started event:', data);
+                    isPresentationMode = true;
+                    isPlaying = true;
+                    updatePlayPauseButton();
+                    updateMenuVisibility();
+                    
+                    // Start the timer
+                    startTimer();
+                    
+                    // Update current slide if provided
+                    if (data.currentSlide) {
+                        const oldSlideIndex = currentSlideIndex;
+                        currentSlideIndex = data.currentSlide;
+                        document.getElementById('current-slide-display').textContent = data.currentSlide;
+                        updateCurrentSlideHighlight();
+                        
+                        // Scroll to current slide if it changed
+                        if (oldSlideIndex !== currentSlideIndex) {
+                            scrollToCurrentSlide();
+                        }
+                    }
+                });
+                
+                socket.on('presentation_stopped', function(data) {
+                    console.log('🛑 Presentation stopped event:', data);
+                    isPresentationMode = false;
+                    isPlaying = false;
+                    updatePlayPauseButton();
+                    updateMenuVisibility();
+                    
+                    // Stop/pause the timer
+                    stopTimer();
+                });
+                
+                socket.on('presentation_closed', function(data) {
+                    console.log('📄 Presentation closed event:', data);
+                    
+                    // Reset presentation state
+                    isPresentationMode = false;
+                    isPlaying = false;
+                    updatePlayPauseButton();
+                    
+                    // Reset timer and display
+                    resetTimer();
+                    
+                    // Reset slide displays
+                    currentSlideIndex = 1;
+                    totalSlides = 0;
+                    document.getElementById('current-slide-display').textContent = '--';
+                    document.getElementById('total-slides-display').textContent = '--';
+                    document.getElementById('total-time-display').textContent = '0:00:00'; // Reset Total Time
+                    
+                    // Clear timing data
+                    window.timingData = {};
+                    
+                    // Clear slides and show no presentation message
+                    clearSlides();
+                    
+                    // Update menu visibility
+                    updateMenuVisibility();
+                    
+                    console.log('✅ UI reset for closed presentation - Total Time set to 0:00:00');
+                });
+                
+                socket.on('monitoring_status', function(data) {
+                    console.log('📡 Monitoring status:', data);
+                });
+                
+                // Request to start monitoring when connected
+                socket.emit('start_monitoring');
+                
+            } catch (error) {
+                console.error('❌ Failed to initialize WebSocket:', error);
+            }
+        }
+
+        function editTime(slideId) {
+            const slideElement = document.getElementById(slideId);
+            const timeElement = slideElement.querySelector('.editable-time');
+            const currentTime = timeElement.textContent;
+            
+            // Add editing class to slide
+            slideElement.classList.add('editing');
+            
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'time-input';
+            input.value = currentTime;
+            input.maxLength = 5; // For format like "12:34"
+            
+            // Replace time text with input
+            timeElement.style.display = 'none';
+            timeElement.parentNode.insertBefore(input, timeElement.nextSibling);
+            
+            // Focus and select the input
+            input.focus();
+            input.select();
+            
+            // Flag to prevent multiple cleanup calls
+            let isCleanedUp = false;
+            
+            // Handle saving the value
+            async function saveTime() {
+                // Prevent multiple save calls
+                if (isCleanedUp) return;
+                
+                const newTime = input.value.trim();
+                const originalTime = timeElement.getAttribute('data-original');
+                
+                // Basic validation for time format (MM:SS or M:SS)
+                if (!newTime.match(/^\d{1,2}:\d{2}$/)) {
+                    // Revert to original value if invalid format
+                    console.warn('Invalid time format:', newTime);
+                    input.value = originalTime;
+                    cleanupEdit();
+                    return;
+                }
+                
+                // Extract slide number from slideId (format: "slide-N")
+                const slideNumber = parseInt(slideId.replace('slide-', ''));
+                if (isNaN(slideNumber)) {
+                    console.error('Could not parse slide number from:', slideId);
+                    cleanupEdit();
+                    return;
+                }
+                
+                // Convert time format MM:SS to seconds
+                const [minutes, seconds] = newTime.split(':').map(num => parseInt(num));
+                const totalSeconds = minutes * 60 + seconds;
+                
+                // Check if time actually changed
+                const [origMinutes, origSeconds] = originalTime.split(':').map(num => parseInt(num));
+                const originalTotalSeconds = origMinutes * 60 + origSeconds;
+                
+                if (totalSeconds === originalTotalSeconds) {
+                    // No change, just cleanup
+                    cleanupEdit();
+                    return;
+                }
+                
+                try {
+                    // Call backend API to save the timing
+                    const response = await fetch(`/slide_timings/update/${slideNumber}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            plannedTime: totalSeconds
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        // Update display with new time
+                        timeElement.textContent = newTime;
+                        timeElement.setAttribute('data-original', newTime);
+                        
+                        // Update global timing data
+                        if (window.timingData) {
+                            window.timingData[slideNumber] = totalSeconds;
+                        }
+                        
+                        // Update total time display if available
+                        if (result.totalPlannedTime) {
+                            const totalSeconds = result.totalPlannedTime;
+                            const hours = Math.floor(totalSeconds / 3600);
+                            const minutes = Math.floor((totalSeconds % 3600) / 60);
+                            const seconds = Math.floor(totalSeconds % 60);
+                            
+                            const formattedTime = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                            document.getElementById('total-time-display').textContent = formattedTime;
+                        }
+                        
+                        console.log(`✅ Updated slide ${slideNumber} timing to ${newTime} (${totalSeconds}s)`);
+                        
+                        // Show success feedback briefly
+                        slideElement.classList.add('timing-updated');
+                        setTimeout(() => {
+                            slideElement.classList.remove('timing-updated');
+                        }, 1000);
+                        
+                    } else {
+                        console.error('Failed to update timing:', result.message);
+                        alert(`Error saving timing: ${result.message}`);
+                        // Revert to original value
+                        input.value = originalTime;
+                    }
+                } catch (error) {
+                    console.error('Error updating slide timing:', error);
+                    alert('Error saving timing. Please try again.');
+                    // Revert to original value
+                    input.value = originalTime;
+                }
+                
+                cleanupEdit();
+            }
+            
+            // Cancel edit without saving
+            function cancelEdit() {
+                if (isCleanedUp) return;
+                
+                // Revert to original value and cancel
+                input.value = timeElement.getAttribute('data-original');
+                cleanupEdit();
+            }
+            
+            // Clean up function to safely remove elements and reset state
+            function cleanupEdit() {
+                // Prevent multiple cleanup calls
+                if (isCleanedUp) return;
+                isCleanedUp = true;
+                
+                // Remove event listeners first to prevent further calls
+                try {
+                    input.removeEventListener('blur', saveTime);
+                    input.removeEventListener('keydown', handleKeydown);
+                } catch (e) {
+                    // Event listeners might already be removed
+                }
+                
+                // Safely remove input element
+                try {
+                    // Check if input still exists in the DOM
+                    if (input && document.contains(input)) {
+                        if (input.parentNode) {
+                            input.parentNode.removeChild(input);
+                        }
+                    }
+                } catch (e) {
+                    // Element might already be removed, which is fine
+                    console.debug('Input element cleanup handled gracefully:', e.message);
+                }
+                
+                // Restore time element display
+                if (timeElement) {
+                    timeElement.style.display = '';
+                }
+                
+                // Remove editing class
+                if (slideElement) {
+                    slideElement.classList.remove('editing');
+                }
+            }
+            
+            // Separate keydown handler so we can remove it properly
+            function handleKeydown(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveTime();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelEdit();
+                }
+            }
+            
+            // Add event listeners
+            input.addEventListener('keydown', handleKeydown);
+            input.addEventListener('blur', saveTime);
+        }
+
+        // Timer functions
+        function startTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            // If this is a fresh start (not resuming from pause)
+            if (!presentationStartTime) {
+                presentationStartTime = Date.now();
+                totalElapsedSeconds = 0;
+                totalPausedTime = 0;
+            } else if (isPaused && pauseStartTime) {
+                // If resuming from pause, add the paused time to total
+                totalPausedTime += Date.now() - pauseStartTime;
+                pauseStartTime = null;
+            }
+            
+            isPaused = false;
+            
+            // Update the timer every second
+            timerInterval = setInterval(updateTimerDisplay, 1000);
+            
+            // Update immediately
+            updateTimerDisplay();
+            
+            console.log('⏱️ Timer started');
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            if (!isPaused && presentationStartTime) {
+                pauseStartTime = Date.now();
+                isPaused = true;
+            }
+            
+            console.log('⏸️ Timer paused');
+        }
+
+        function resetTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            presentationStartTime = null;
+            totalElapsedSeconds = 0;
+            isPaused = false;
+            pauseStartTime = null;
+            totalPausedTime = 0;
+            
+            resetTimerDisplay();
+            console.log('🔄 Timer reset');
+        }
+
+        function updateTimerDisplay() {
+            if (!presentationStartTime) {
+                return;
+            }
+            
+            // Calculate total elapsed time in seconds
+            const currentTime = Date.now();
+            const totalElapsedMs = currentTime - presentationStartTime - totalPausedTime;
+            totalElapsedSeconds = Math.floor(totalElapsedMs / 1000);
+            
+            // Convert to hours, minutes, seconds
+            const hours = Math.floor(totalElapsedSeconds / 3600);
+            const minutes = Math.floor((totalElapsedSeconds % 3600) / 60);
+            const seconds = totalElapsedSeconds % 60;
+            
+            // Update large digit display
+            updateDigitDisplay('hours', hours);
+            updateDigitDisplay('minutes', minutes);
+            updateDigitDisplay('seconds', seconds);
+            
+            // Update tracking display (difference from planned time)
+            updateTrackingDisplay();
+        }
+
+        function updateDigitDisplay(unit, value) {
+            const tens = Math.floor(value / 10);
+            const ones = value % 10;
+            
+            const tensElement = document.getElementById(`${unit}-tens`);
+            const onesElement = document.getElementById(`${unit}-ones`);
+            
+            if (tensElement) tensElement.textContent = tens.toString();
+            if (onesElement) onesElement.textContent = ones.toString();
+            
+            // Update colors based on time progression
+            updateDigitColors(unit, value);
+        }
+
+        function getTrackingStatus() {
+            if (!window.timingData || !currentSlideIndex) {
+                return 'on_time'; // Default to green if no tracking data
+            }
+            
+            // Calculate expected time up to START of current slide
+            let expectedTimeSeconds = 0;
+            for (let i = 1; i < currentSlideIndex; i++) {
+                expectedTimeSeconds += window.timingData[i] || 60; // Default 1 minute if no timing
+            }
+            
+            // Calculate difference (positive = ahead, negative = behind)
+            const differenceSeconds = expectedTimeSeconds - totalElapsedSeconds;
+            
+            // Determine tracking status
+            if (differenceSeconds >= -60) {
+                return 'on_time'; // Green - Less than 60 seconds behind, or ahead
+            } else if (differenceSeconds >= -120) {
+                return 'losing_progress'; // Orange - 60 seconds to 2 minutes behind
+            } else {
+                return 'off_track'; // Red - More than 2 minutes behind
+            }
+        }
+
+        function updateDigitColors(unit, value) {
+            const tensElement = document.getElementById(`${unit}-tens`);
+            const onesElement = document.getElementById(`${unit}-ones`);
+            
+            if (!tensElement || !onesElement) return;
+            
+            // Remove existing color classes
+            ['gray', 'green', 'white', 'yellow', 'red'].forEach(color => {
+                tensElement.classList.remove(color);
+                onesElement.classList.remove(color);
+            });
+            
+            // Color logic based on time progression
+            if (unit === 'hours') {
+                if (value === 0) {
+                    tensElement.classList.add('gray');
+                    onesElement.classList.add('gray');
+                } else {
+                    tensElement.classList.add('red');
+                    onesElement.classList.add('red');
+                }
+            } else if (unit === 'minutes') {
+                // Use tracking status for minute colors
+                const trackingStatus = getTrackingStatus();
+                if (trackingStatus === 'on_time') {
+                    tensElement.classList.add('green');
+                    onesElement.classList.add('green');
+                } else if (trackingStatus === 'losing_progress') {
+                    tensElement.classList.add('yellow');
+                    onesElement.classList.add('yellow');
+                } else { // off_track
+                    tensElement.classList.add('red');
+                    onesElement.classList.add('red');
+                }
+            } else if (unit === 'seconds') {
+                tensElement.classList.add('white');
+                onesElement.classList.add('white');
+            }
+            
+            // Update corresponding labels
+            updateLabelColors(unit, value);
+        }
+
+        function updateLabelColors(unit, value) {
+            // Find the label element (it's the third element in each group)
+            const labelElements = document.querySelectorAll('.time-label');
+            let labelElement = null;
+            
+            if (unit === 'hours' && labelElements[0]) {
+                labelElement = labelElements[0]; // h label
+            } else if (unit === 'minutes' && labelElements[1]) {
+                labelElement = labelElements[1]; // m label
+            } else if (unit === 'seconds' && labelElements[2]) {
+                labelElement = labelElements[2]; // s label
+            }
+            
+            if (!labelElement) return;
+            
+            // Remove existing color classes
+            ['gray', 'green', 'white', 'yellow', 'red'].forEach(color => {
+                labelElement.classList.remove(color);
+            });
+            
+            // Apply same color logic as digits
+            if (unit === 'hours') {
+                if (value === 0) {
+                    labelElement.classList.add('gray');
+                } else {
+                    labelElement.classList.add('red');
+                }
+            } else if (unit === 'minutes') {
+                // Use tracking status for minute label colors
+                const trackingStatus = getTrackingStatus();
+                if (trackingStatus === 'on_time') {
+                    labelElement.classList.add('green');
+                } else if (trackingStatus === 'losing_progress') {
+                    labelElement.classList.add('yellow');
+                } else { // off_track
+                    labelElement.classList.add('red');
+                }
+            } else if (unit === 'seconds') {
+                labelElement.classList.add('white');
+            }
+        }
+
+        function updateTrackingDisplay() {
+            if (!window.timingData || !currentSlideIndex) {
+                document.getElementById('tracking-display').textContent = '0:00';
+                return;
+            }
+            
+            // Calculate expected time up to START of current slide
+            let expectedTimeSeconds = 0;
+            for (let i = 1; i < currentSlideIndex; i++) {
+                expectedTimeSeconds += window.timingData[i] || 60; // Default 1 minute if no timing
+            }
+            
+            // Calculate difference (positive = ahead, negative = behind)
+            const differenceSeconds = expectedTimeSeconds - totalElapsedSeconds;
+            const isAhead = differenceSeconds > 0;
+            
+            // Format the difference
+            const absDifference = Math.abs(differenceSeconds);
+            const diffMinutes = Math.floor(absDifference / 60);
+            const diffSecondsDisplay = absDifference % 60;
+            
+            const sign = isAhead ? '+' : '-';
+            const formattedDiff = `${sign}${diffMinutes}:${diffSecondsDisplay.toString().padStart(2, '0')}`;
+            
+            // Update display with appropriate color
+            const trackingElement = document.getElementById('tracking-display');
+            trackingElement.textContent = formattedDiff;
+            
+            // Remove existing color classes
+            ['green', 'yellow', 'red', 'white'].forEach(color => {
+                trackingElement.classList.remove(color);
+            });
+            
+            // Simplified 3-state tracking system
+            if (differenceSeconds >= -60) {
+                // Less than 60 seconds behind, or ahead of schedule
+                trackingElement.classList.add('green'); // On time
+            } else if (differenceSeconds >= -120) {
+                // 60 seconds to 2 minutes behind schedule
+                trackingElement.classList.add('yellow'); // Losing progress
+            } else {
+                // More than 2 minutes behind schedule
+                trackingElement.classList.add('red'); // Off track
+            }
+        }
+    </script>
+</body>
+</html> 

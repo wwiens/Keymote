@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Presentation - Keymote</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/styles.css">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- iOS Safari PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Keymote">
+    <meta name="theme-color" content="#FFD700">
+    <meta name="msapplication-TileColor" content="#1a1a1a">
+    
+    <!-- iOS Safari PWA Icons -->
+    <link rel="apple-touch-icon" sizes="152x152" href="static/images/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="static/images/icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="static/images/icon-167x167.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="static/images/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="static/images/icon-16x16.png">
+    
+    <style>
+        .open-presentation-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            background: #1a1a1a;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .back-button {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .back-button:hover {
+            background: #444;
+        }
+        
+        .page-title {
+            color: #FFD700;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .file-browser {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .browser-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .browser-btn {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .browser-btn:hover {
+            background: #444;
+        }
+        
+        .browser-btn.active {
+            background: #FFD700;
+            color: #1a1a1a;
+        }
+        
+        .current-path {
+            background: #1a1a1a;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            color: #ccc;
+        }
+        
+        .file-list {
+            max-height: 60vh;
+            overflow-y: auto;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #1a1a1a;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            transition: background-color 0.2s;
+            cursor: default;
+            gap: 12px;
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-item:hover {
+            background: #333;
+        }
+        
+        .file-item.directory {
+            cursor: pointer;
+        }
+        
+        .file-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .file-name {
+            color: #fff;
+            font-weight: 500;
+            font-size: 16px;
+            word-break: break-word;
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .file-open-btn {
+            background: #FFD700;
+            color: #1a1a1a;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            min-width: 60px;
+        }
+        
+        .file-open-btn:hover {
+            background: #f0c900;
+            transform: translateY(-1px);
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
+            .open-presentation-container {
+                padding: 10px;
+                max-width: 100%;
+            }
+            
+            .page-header {
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+                flex-wrap: wrap;
+            }
+            
+            .page-title {
+                font-size: 18px;
+                order: 2;
+                flex-basis: 100%;
+                text-align: center;
+                margin-top: 10px;
+            }
+            
+            .back-button {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            
+            .file-browser {
+                padding: 10px;
+                border-radius: 8px;
+            }
+            
+            .browser-controls {
+                flex-direction: column;
+                gap: 6px;
+                margin-bottom: 15px;
+            }
+            
+            .browser-btn {
+                width: 100%;
+                text-align: center;
+                padding: 12px;
+                font-size: 14px;
+            }
+            
+            .current-path {
+                padding: 8px 10px;
+                font-size: 12px;
+                margin-bottom: 10px;
+            }
+            
+            .file-list {
+                max-height: 50vh;
+            }
+            
+            .file-item {
+                padding: 10px;
+                flex-wrap: nowrap;
+            }
+            
+            .file-icon {
+                font-size: 20px;
+            }
+            
+            .file-details {
+                min-width: 0;
+                flex: 1;
+                padding-right: 8px;
+            }
+            
+            .file-name {
+                font-size: 13px;
+                line-height: 1.2;
+                -webkit-line-clamp: 1;
+            }
+            
+            .file-open-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+                min-width: 45px;
+                white-space: nowrap;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .open-presentation-container {
+                padding: 8px;
+            }
+            
+            .file-browser {
+                padding: 8px;
+            }
+            
+            .file-item {
+                padding: 8px;
+            }
+            
+            .file-name {
+                font-size: 12px;
+            }
+            
+            .file-open-btn {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+            
+            .loading-text {
+                font-size: 14px;
+            }
+            
+            .loading-subtext {
+                font-size: 12px;
+            }
+            
+            .spinner {
+                width: 35px;
+                height: 35px;
+                margin: 0 auto 15px;
+            }
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .keynote-file {
+            border-left: 3px solid #FFD700;
+        }
+        
+        .powerpoint-file {
+            border-left: 3px solid #d04423;
+        }
+        
+        .directory {
+            border-left: 3px solid #4CAF50;
+        }
+        
+        .other-file {
+            border-left: 3px solid #666;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 26, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        
+        .loading-overlay.show {
+            display: flex;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: #fff;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top: 4px solid #FFD700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        .loading-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            color: #fff;
+        }
+        
+        .loading-subtext {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            color: #999;
+            margin-top: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="open-presentation-container">
+        <div class="page-header">
+            <button class="back-button" onclick="goBack()">
+                <span>←</span>
+                <span>Back to Controller</span>
+            </button>
+            <h1 class="page-title">Open Presentation</h1>
+            <div></div> <!-- Spacer for flex layout -->
+        </div>
+
+        <div class="file-browser">
+            <div class="browser-controls">
+                <button onclick="getRecentFiles()" class="browser-btn active">Recent Files</button>
+                <button onclick="browseFiles()" class="browser-btn">Browse Directory</button>
+                <button onclick="browseHome()" class="browser-btn">Home</button>
+            </div>
+            <div class="current-path">
+                <span id="currentPath">Recent Presentations</span>
+            </div>
+            <div class="file-list" id="fileList">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Opening Presentation</div>
+            <div class="loading-subtext">Please wait...</div>
+        </div>
+    </div>
+
+    <script>
+        // File browser functionality
+        let currentBrowsePath = null;
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        async function getRecentFiles() {
+            setActiveTab('getRecentFiles');
+            document.getElementById('currentPath').textContent = 'Recent Presentations';
+            document.getElementById('fileList').innerHTML = '<div class="loading">Loading recent files...</div>';
+            
+            try {
+                const response = await fetch('/files/recent_keynote_files');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displayFileList(data.files, 'recent');
+                } else {
+                    document.getElementById('fileList').innerHTML = '<div class="empty-state">Error loading recent files: ' + data.message + '</div>';
+                }
+            } catch (error) {
+                console.error('Error fetching recent files:', error);
+                document.getElementById('fileList').innerHTML = '<div class="empty-state">Error loading recent files</div>';
+            }
+        }
+
+        async function browseFiles(path = null) {
+            setActiveTab('browseFiles');
+            document.getElementById('fileList').innerHTML = '<div class="loading">Loading directory...</div>';
+            
+            try {
+                const url = path ? `/files/browse?path=${encodeURIComponent(path)}` : '/files/browse';
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    currentBrowsePath = data.currentPath;
+                    document.getElementById('currentPath').textContent = data.currentPath;
+                    displayFileList(data.items, 'browse', data.parentPath);
+                } else {
+                    document.getElementById('fileList').innerHTML = '<div class="empty-state">Error browsing directory: ' + data.message + '</div>';
+                }
+            } catch (error) {
+                console.error('Error browsing files:', error);
+                document.getElementById('fileList').innerHTML = '<div class="empty-state">Error browsing directory</div>';
+            }
+        }
+
+        function browseHome() {
+            browseFiles(); // Default to home directory
+        }
+
+        function setActiveTab(activeFunction) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.browser-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to the corresponding button
+            if (activeFunction === 'getRecentFiles') {
+                document.querySelector('.browser-btn:nth-child(1)').classList.add('active');
+            } else if (activeFunction === 'browseFiles') {
+                document.querySelector('.browser-btn:nth-child(2)').classList.add('active');
+            } else if (activeFunction === 'browseHome') {
+                document.querySelector('.browser-btn:nth-child(3)').classList.add('active');
+            }
+        }
+
+        function displayFileList(items, mode, parentPath = null) {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            
+            if (!items || items.length === 0) {
+                fileList.innerHTML = '<div class="empty-state">No files found</div>';
+                return;
+            }
+            
+            // Add parent directory link if we have one (only in browse mode)
+            if (mode === 'browse' && parentPath) {
+                const parentItem = document.createElement('div');
+                parentItem.className = 'file-item directory';
+                parentItem.innerHTML = `
+                    <span class="file-icon">📁</span>
+                    <div class="file-details">
+                        <div class="file-name">.. (Go Up)</div>
+                    </div>
+                `;
+                parentItem.onclick = () => browseFiles(parentPath);
+                fileList.appendChild(parentItem);
+            }
+            
+            items.forEach(item => {
+                const fileItem = document.createElement('div');
+                
+                if (mode === 'recent') {
+                    // Recent files display
+                    const isPowerPoint = item.isPowerPointFile || false;
+                    const fileTypeClass = isPowerPoint ? 'powerpoint-file' : 'keynote-file';
+                    fileItem.className = `file-item ${fileTypeClass}`;
+                    fileItem.innerHTML = `
+                        <span class="file-icon">${isPowerPoint ? '📊' : '🎯'}</span>
+                        <div class="file-details">
+                            <div class="file-name">${item.name}</div>
+                        </div>
+                        <button class="file-open-btn" onclick="openPresentationFile('${item.path}')">Open</button>
+                    `;
+                } else {
+                    // Directory browser display
+                    let className = 'other-file';
+                    if (item.isDirectory) className = 'directory';
+                    else if (item.isPresentationFile) className = item.isPowerPointFile ? 'powerpoint-file' : 'keynote-file';
+                    
+                    fileItem.className = `file-item ${className}`;
+                    
+                    let icon = '📄';
+                    if (item.isDirectory) icon = '📁';
+                    else if (item.isKeynoteFile) icon = '🎯';
+                    else if (item.isPowerPointFile) icon = '📊';
+                    
+                    fileItem.innerHTML = `
+                        <span class="file-icon">${icon}</span>
+                        <div class="file-details">
+                            <div class="file-name">${item.name}</div>
+                        </div>
+                        ${item.isPresentationFile ? `<button class="file-open-btn" onclick="openPresentationFile('${item.path}')">Open</button>` : ''}
+                    `;
+                    
+                    if (item.isDirectory) {
+                        fileItem.onclick = (e) => {
+                            if (!e.target.classList.contains('file-open-btn')) {
+                                browseFiles(item.path);
+                            }
+                        };
+                        fileItem.style.cursor = 'pointer';
+                    }
+                }
+                
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+        
+        async function openPresentationFile(filePath) {
+            // Show loading indicator
+            showLoading();
+            
+            try {
+                const response = await fetch('/files/open_keynote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ filePath: filePath })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Wait a moment to ensure the presentation is fully loaded
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Hide loading and redirect back to main controller with flag
+                    hideLoading();
+                    window.location.href = '/?presentation_opened=true';
+                } else {
+                    hideLoading();
+                    alert('Error opening presentation: ' + data.message);
+                }
+            } catch (error) {
+                hideLoading();
+                console.error('Error opening presentation:', error);
+                alert('Error opening presentation. Please try again.');
+            }
+        }
+
+
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load recent files by default
+            getRecentFiles();
+        });
+    </script>
+</body>
+</html> 
