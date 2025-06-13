@@ -6,7 +6,7 @@ This Community Edition is fully functional and provides all the essential featur
 
 ## 📜 License
 
-This project is licensed under the **Apache License 2.0**. You are free to use, modify, and distribute this software. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for more details.
+This project is licensed under the **Apache License 2.0**. You are free to use, modify, and distribute this software. See the LICENSE-2.0.txt file for more details.
 
 ## ✨ Features (Community Edition)
 
