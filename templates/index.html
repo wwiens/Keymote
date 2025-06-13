@@ -706,10 +706,11 @@
                 const response = await fetch(`/goto_slide/${slideNumber}`);
                 const data = await response.json();
                 
-                                    if (data.status === 'success') {
-                        console.log(`✅ Successfully navigated to slide ${slideNumber}: ${data.message}`);
-                        // Update will happen automatically via monitoring/WebSocket
-                    } else {
+                if (data.status === 'success') {
+                    console.log(`✅ Successfully navigated to slide ${slideNumber}: ${data.message}`);
+                    // Update will happen automatically via monitoring/WebSocket
+                    setCurrentSlideElapsedFromBackend(slideNumber);
+                } else {
                     console.error(`❌ Failed to navigate to slide ${slideNumber}:`, data.message);
                     alert(`Failed to navigate to slide ${slideNumber}: ` + (data.message || 'Unknown error'));
                 }
@@ -957,7 +958,7 @@
                     }
                     
                     // Update current slide elapsed time and regenerate slides
-                    updateCurrentSlideElapsedAndSlides(data);
+                    setCurrentSlideElapsedFromBackend(data.slideNumber);
                 });
                 
                 socket.on('presentation_started', function(data) {
@@ -984,7 +985,7 @@
                     }
                     
                     // Update current slide elapsed time and regenerate slides
-                    updateCurrentSlideElapsedAndSlides(data);
+                    setCurrentSlideElapsedFromBackend(data.currentSlide);
                 });
                 
                 socket.on('presentation_stopped', function(data) {
@@ -1479,6 +1480,33 @@
                 generateSlides(totalSlides, window.timingData);
             }
             // Start live timer if presentation is running
+            if (isPresentationMode) {
+                startCurrentSlideElapsedTimer();
+            } else {
+                stopCurrentSlideElapsedTimer();
+            }
+        }
+
+        // Fetch accumulated time for a slide from the backend
+        async function fetchAccumulatedTimeForSlide(slideNumber) {
+            try {
+                const response = await fetch(`/slide_timings/slide/${slideNumber}`);
+                const data = await response.json();
+                if (data.status === 'success' && data.timingStatus && typeof data.timingStatus.actualTime === 'number') {
+                    return Math.floor(data.timingStatus.actualTime);
+                }
+            } catch (e) {
+                console.error('Failed to fetch accumulated time for slide', slideNumber, e);
+            }
+            return 0;
+        }
+
+        // Update current slide elapsed and start timer from accumulated value
+        async function setCurrentSlideElapsedFromBackend(slideNumber) {
+            const baseElapsed = await fetchAccumulatedTimeForSlide(slideNumber);
+            window.currentSlideElapsed = baseElapsed;
+            window.currentSlideElapsedBase = baseElapsed;
+            window.currentSlideElapsedTimestamp = Date.now();
             if (isPresentationMode) {
                 startCurrentSlideElapsedTimer();
             } else {
