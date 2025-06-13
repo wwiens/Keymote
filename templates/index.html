@@ -143,6 +143,19 @@
         let pauseStartTime = null;
         let totalPausedTime = 0;
 
+        // Track current slide elapsed time and last update timestamp
+        window.currentSlideElapsed = 0;
+        window.currentSlideElapsedBase = 0;
+        window.currentSlideElapsedTimestamp = null;
+        window.currentSlideElapsedInterval = null;
+
+        // Utility to format seconds as M:SS
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
         // API connection functions
         async function fetchCurrentSlide() {
             try {
@@ -228,6 +241,41 @@
             updateMenuVisibility();
         }
 
+        // Live update for current slide elapsed time
+        function startCurrentSlideElapsedTimer() {
+            stopCurrentSlideElapsedTimer();
+            if (!(isPresentationMode && typeof currentSlideIndex === 'number' && currentSlideIndex > 0)) return;
+            window.currentSlideElapsedInterval = setInterval(() => {
+                if (!(isPresentationMode && typeof currentSlideIndex === 'number' && currentSlideIndex > 0)) return;
+                if (window.currentSlideElapsedTimestamp) {
+                    const now = Date.now();
+                    const elapsed = window.currentSlideElapsedBase + (now - window.currentSlideElapsedTimestamp) / 1000;
+                    updateCurrentSlideElapsedLabel(Math.floor(elapsed));
+                }
+            }, 1000);
+        }
+        function stopCurrentSlideElapsedTimer() {
+            if (window.currentSlideElapsedInterval) {
+                clearInterval(window.currentSlideElapsedInterval);
+                window.currentSlideElapsedInterval = null;
+            }
+        }
+        function updateCurrentSlideElapsedLabel(elapsedSeconds) {
+            const slideElement = document.getElementById(`slide-${currentSlideIndex}`);
+            if (slideElement) {
+                const plannedTime = (window.timingData && window.timingData[currentSlideIndex]) ? window.timingData[currentSlideIndex] : 60;
+                const label = slideElement.querySelector('.slide-label');
+                if (label) {
+                    label.innerHTML = `Slide <span class=\"slide-number\">${currentSlideIndex}</span>`;
+                }
+                // Hide .progress-time for current slide
+                const progressTime = slideElement.querySelector('.progress-time');
+                if (progressTime) {
+                    progressTime.innerHTML = `<span class=\"elapsed-time\">${formatTime(elapsedSeconds)}</span> of <span class=\"planned-time\">${formatTime(plannedTime)}</span>`;
+                }
+            }
+        }
+
         // Generate slide elements dynamically
         function generateSlides(slideCount, timings = {}) {
             const container = document.getElementById('slides-container');
@@ -248,13 +296,23 @@
                 
                 // Get timing for this slide (default to 1:00 if not available)
                 const slideTimingSeconds = timings[i] || 60;
-                const minutes = Math.floor(slideTimingSeconds / 60);
-                const seconds = slideTimingSeconds % 60;
-                const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                const plannedTimeDisplay = formatTime(slideTimingSeconds);
+                let labelHtml = '';
+                let progressTimeHtml = '';
+                
+                // If this is the current slide and presentation is running, show elapsed time and hide .progress-time
+                if (i === currentSlideIndex && isPresentationMode && typeof window.currentSlideElapsed === 'number') {
+                    const elapsedDisplay = formatTime(window.currentSlideElapsed);
+                    labelHtml = `<span class=\"slide-label\">Slide <span class=\"slide-number\">${i}</span></span>`;
+                    progressTimeHtml = `<span class=\"progress-time editable-time\"><span class=\"elapsed-time\">${elapsedDisplay}</span> of <span class=\"planned-time\">${plannedTimeDisplay}</span></span>`;
+                } else {
+                    labelHtml = `<span class=\"slide-label\">Slide <span class=\"slide-number\">${i}</span></span>`;
+                    progressTimeHtml = `<span class=\"progress-time editable-time\"><span class=\"planned-time\">${plannedTimeDisplay}</span></span>`;
+                }
                 
                 slideElement.innerHTML = `
-                    <span class="slide-label">Slide: <span class="slide-number">${i}</span></span>
-                    <span class="progress-time editable-time" data-original="${timeDisplay}">${timeDisplay}</span>
+                    ${labelHtml}
+                    ${progressTimeHtml}
                     <button class="edit-icon" onclick="editTime('slide-${i}')">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                             <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -897,6 +955,9 @@
                         isPlaying = data.presentationRunning;
                         updatePlayPauseButton();
                     }
+                    
+                    // Update current slide elapsed time and regenerate slides
+                    updateCurrentSlideElapsedAndSlides(data);
                 });
                 
                 socket.on('presentation_started', function(data) {
@@ -921,6 +982,9 @@
                             scrollToCurrentSlide();
                         }
                     }
+                    
+                    // Update current slide elapsed time and regenerate slides
+                    updateCurrentSlideElapsedAndSlides(data);
                 });
                 
                 socket.on('presentation_stopped', function(data) {
@@ -932,6 +996,7 @@
                     
                     // Stop/pause the timer
                     stopTimer();
+                    stopCurrentSlideElapsedTimer();
                 });
                 
                 socket.on('presentation_closed', function(data) {
@@ -962,6 +1027,7 @@
                     updateMenuVisibility();
                     
                     console.log('✅ UI reset for closed presentation - Total Time set to 0:00:00');
+                    stopCurrentSlideElapsedTimer();
                 });
                 
                 socket.on('monitoring_status', function(data) {
@@ -979,37 +1045,32 @@
         function editTime(slideId) {
             const slideElement = document.getElementById(slideId);
             const timeElement = slideElement.querySelector('.editable-time');
-            const currentTime = timeElement.textContent;
-            
+            // Robustly get the planned time for editing
+            let plannedTimeSpan = timeElement.querySelector('.planned-time');
+            let currentTime = plannedTimeSpan ? plannedTimeSpan.textContent : timeElement.textContent.trim();
             // Add editing class to slide
             slideElement.classList.add('editing');
-            
             // Create input element
             const input = document.createElement('input');
             input.type = 'text';
             input.className = 'time-input';
             input.value = currentTime;
             input.maxLength = 5; // For format like "12:34"
-            
             // Replace time text with input
             timeElement.style.display = 'none';
             timeElement.parentNode.insertBefore(input, timeElement.nextSibling);
-            
             // Focus and select the input
             input.focus();
             input.select();
-            
             // Flag to prevent multiple cleanup calls
             let isCleanedUp = false;
-            
             // Handle saving the value
             async function saveTime() {
-                // Prevent multiple save calls
                 if (isCleanedUp) return;
-                
                 const newTime = input.value.trim();
-                const originalTime = timeElement.getAttribute('data-original');
-                
+                // Always use the .planned-time span for originalTime if present
+                let plannedTimeSpan = timeElement.querySelector('.planned-time');
+                let originalTime = plannedTimeSpan ? plannedTimeSpan.textContent : timeElement.getAttribute('data-original') || timeElement.textContent.trim();
                 // Basic validation for time format (MM:SS or M:SS)
                 if (!newTime.match(/^\d{1,2}:\d{2}$/)) {
                     // Revert to original value if invalid format
@@ -1018,7 +1079,6 @@
                     cleanupEdit();
                     return;
                 }
-                
                 // Extract slide number from slideId (format: "slide-N")
                 const slideNumber = parseInt(slideId.replace('slide-', ''));
                 if (isNaN(slideNumber)) {
@@ -1026,23 +1086,19 @@
                     cleanupEdit();
                     return;
                 }
-                
                 // Convert time format MM:SS to seconds
                 const [minutes, seconds] = newTime.split(':').map(num => parseInt(num));
                 const totalSeconds = minutes * 60 + seconds;
-                
                 // Check if time actually changed
-                const [origMinutes, origSeconds] = originalTime.split(':').map(num => parseInt(num));
-                const originalTotalSeconds = origMinutes * 60 + origSeconds;
-                
-                if (totalSeconds === originalTotalSeconds) {
-                    // No change, just cleanup
-                    cleanupEdit();
-                    return;
+                if (originalTime) {
+                    const [origMinutes, origSeconds] = originalTime.split(':').map(num => parseInt(num));
+                    const originalTotalSeconds = origMinutes * 60 + origSeconds;
+                    if (totalSeconds === originalTotalSeconds) {
+                        cleanupEdit();
+                        return;
+                    }
                 }
-                
                 try {
-                    // Call backend API to save the timing
                     const response = await fetch(`/slide_timings/update/${slideNumber}`, {
                         method: 'PUT',
                         headers: {
@@ -1052,54 +1108,44 @@
                             plannedTime: totalSeconds
                         })
                     });
-                    
                     const result = await response.json();
-                    
                     if (result.status === 'success') {
-                        // Update display with new time
-                        timeElement.textContent = newTime;
+                        // Update only the .planned-time span if present
+                        let plannedTimeSpan = timeElement.querySelector('.planned-time');
+                        if (plannedTimeSpan) {
+                            plannedTimeSpan.textContent = newTime;
+                        } else {
+                            timeElement.textContent = newTime;
+                        }
                         timeElement.setAttribute('data-original', newTime);
-                        
-                        // Update global timing data
                         if (window.timingData) {
                             window.timingData[slideNumber] = totalSeconds;
                         }
-                        
-                        // Update total time display if available
                         if (result.totalPlannedTime) {
                             const totalSeconds = result.totalPlannedTime;
                             const hours = Math.floor(totalSeconds / 3600);
                             const minutes = Math.floor((totalSeconds % 3600) / 60);
                             const seconds = Math.floor(totalSeconds % 60);
-                            
                             const formattedTime = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                             document.getElementById('total-time-display').textContent = formattedTime;
                         }
-                        
                         console.log(`✅ Updated slide ${slideNumber} timing to ${newTime} (${totalSeconds}s)`);
-                        
-                        // Show success feedback briefly
                         slideElement.classList.add('timing-updated');
                         setTimeout(() => {
                             slideElement.classList.remove('timing-updated');
                         }, 1000);
-                        
                     } else {
                         console.error('Failed to update timing:', result.message);
                         alert(`Error saving timing: ${result.message}`);
-                        // Revert to original value
                         input.value = originalTime;
                     }
                 } catch (error) {
                     console.error('Error updating slide timing:', error);
                     alert('Error saving timing. Please try again.');
-                    // Revert to original value
                     input.value = originalTime;
                 }
-                
                 cleanupEdit();
             }
-            
             // Cancel edit without saving
             function cancelEdit() {
                 if (isCleanedUp) return;
@@ -1411,6 +1457,32 @@
             } else {
                 // More than 2 minutes behind schedule
                 trackingElement.classList.add('red'); // Off track
+            }
+        }
+
+        // In WebSocket event handlers, update window.currentSlideElapsed and regenerate slides
+        function updateCurrentSlideElapsedAndSlides(data) {
+            // Try to get elapsed time from timingStatus or currentTiming
+            let elapsed = 0;
+            if (data && data.timingStatus && typeof data.timingStatus.actualTime === 'number') {
+                elapsed = data.timingStatus.actualTime;
+            } else if (data && data.currentTiming && typeof data.currentTiming.actualTime === 'number') {
+                elapsed = data.currentTiming.actualTime;
+            } else {
+                elapsed = 0;
+            }
+            window.currentSlideElapsed = Math.floor(elapsed);
+            window.currentSlideElapsedBase = Math.floor(elapsed);
+            window.currentSlideElapsedTimestamp = Date.now();
+            // Regenerate slides to update label
+            if (typeof totalSlides === 'number' && totalSlides > 0 && window.timingData) {
+                generateSlides(totalSlides, window.timingData);
+            }
+            // Start live timer if presentation is running
+            if (isPresentationMode) {
+                startCurrentSlideElapsedTimer();
+            } else {
+                stopCurrentSlideElapsedTimer();
             }
         }
     </script>

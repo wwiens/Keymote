@@ -773,6 +773,10 @@ body {
     color: #d74e09;
 }
 
+.planned-time, .elapsed-time {
+    font-weight: 400 !important;
+}
+
 /* Responsive adjustments */
 @media (max-width: 390px) {  
     body {
