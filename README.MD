@@ -4,7 +4,7 @@ Welcome to the **Community Edition** of Keymote\! This is the open-source core o
 
 This Community Edition is fully functional and provides all the essential features you need for effective presentation timing and control. It is also the foundation for our upcoming **Pro version**, which will offer advanced features for professional presenters, teams, and conferences.
 
-<img src="keymote_screen.png" alt="Keymote Interface Screenshot" width="700" />
+<img src="keymote_screen.png" alt="Keymote Interface Screenshot" width="350" />
 
 ## 📜 License
 
