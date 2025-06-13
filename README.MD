@@ -1,6 +1,6 @@
-# Keynote Presenter Pro - Community Edition
+# Keymote - Community Edition
 
-Welcome to the **Community Edition** of Keynote Presenter Pro\! This is the open-source core of a powerful tool designed to give you unparalleled control over your Keynote presentations. It features a Flask-based REST API with **real-time slide change detection**, **automatic slide timing management**, and **comprehensive file management** to remotely control Keynote presentations on macOS using AppleScript and WebSocket technology.
+Welcome to the **Community Edition** of Keymote\! This is the open-source core of a powerful tool designed to give you unparalleled control over your Keynote presentations. It features a Flask-based REST API with **real-time slide change detection**, **automatic slide timing management**, and **comprehensive file management** to remotely control Keynote presentations on macOS using AppleScript and WebSocket technology.
 
 This Community Edition is fully functional and provides all the essential features you need for effective presentation timing and control. It is also the foundation for our upcoming **Pro version**, which will offer advanced features for professional presenters, teams, and conferences.
 
@@ -24,7 +24,7 @@ This project is licensed under the **Apache License 2.0**. You are free to use, 
 
 ## 🚀 Upgrade to Pro (Coming Soon!)
 
-The **Pro version** of Keynote Presenter Pro will be a native macOS and iPhone application, offering a seamless user experience and advanced features, including:
+The **Pro version** of Keymote will be a native macOS and iPhone application, offering a seamless user experience and advanced features, including:
 
   - **🖥️📱 Native macOS and iPhone apps**
   - **🤖 AI Slide Timing Analysis**
@@ -33,7 +33,7 @@ The **Pro version** of Keynote Presenter Pro will be a native macOS and iPhone a
   - **🔊 Sound and haptic feedback**
   - **⭐ Slide priority settings**
 
-By using the Community Edition, you are getting a preview of the power and flexibility that Keynote Presenter Pro offers. We welcome your feedback and contributions to help make this the best presentation tool available.
+By using the Community Edition, you are getting a preview of the power and flexibility that Keymote offers. We welcome your feedback and contributions to help make this the best presentation tool available.
 
 
 ## AI Generated Code
