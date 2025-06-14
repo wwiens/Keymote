@@ -135,6 +135,9 @@
         let timingData = {};
         let socket = null;
 
+        // Wake Lock API variable (for non-iOS only)
+        let wakeLock = null;
+
         // Timer variables
         let timerInterval = null;
         let presentationStartTime = null;
@@ -820,97 +823,6 @@
             }
         }
 
-        async function startPresentation() {
-            try {
-                console.log('🎬 Starting presentation...');
-                const response = await fetch('/start_presentation');
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    isPresentationMode = true;
-                    isPlaying = true;
-                    updatePlayPauseButton();
-                    updateMenuVisibility();
-                    
-                    // Start the timer
-                    startTimer();
-                    
-                    console.log('✅ Presentation started successfully');
-                    
-                    // Refresh slide info after starting
-                    await updateSlideInfo();
-                } else {
-                    console.error('❌ Failed to start presentation:', data.message);
-                    alert('Failed to start presentation: ' + (data.message || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('❌ Error starting presentation:', error);
-                alert('Error starting presentation. Make sure Keynote is running.');
-            }
-        }
-
-        async function stopPresentation() {
-            try {
-                console.log('🛑 Stopping presentation...');
-                const response = await fetch('/stop_presentation');
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    isPresentationMode = false;
-                    isPlaying = false;
-                    updatePlayPauseButton();
-                    updateMenuVisibility();
-                    
-                    // Stop/pause the timer
-                    stopTimer();
-                    
-                    console.log('✅ Presentation stopped successfully');
-                    
-                    // Refresh slide info after stopping
-                    await updateSlideInfo();
-                } else {
-                    console.error('❌ Failed to stop presentation:', data.message);
-                    alert('Failed to stop presentation: ' + (data.message || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('❌ Error stopping presentation:', error);
-                alert('Error stopping presentation. Make sure Keynote is running.');
-            }
-        }
-
-        async function togglePlayPause() {
-            if (!isPresentationMode) {
-                // If not in presentation mode, start it
-                await startPresentation();
-            } else {
-                // In presentation mode, toggle play/pause
-                if (isPlaying) {
-                    // Currently playing, so pause (stop)
-                    await stopPresentation();
-                } else {
-                    // Currently paused, so play (start)
-                    await startPresentation();
-                }
-            }
-        }
-
-        function updatePlayPauseButton() {
-            const playPauseIcon = document.getElementById('play-pause-icon');
-            const playPauseBtn = document.getElementById('play-pause-btn');
-            
-            if (isPresentationMode && isPlaying) {
-                // Show pause icon when presentation is playing
-                playPauseIcon.src = 'static/images/pause.svg';
-                playPauseIcon.alt = 'Pause';
-                playPauseBtn.title = 'Pause Presentation';
-            } else {
-                // Show play icon when not playing or not in presentation mode
-                playPauseIcon.src = 'static/images/play.svg';
-                playPauseIcon.alt = 'Play';
-                playPauseBtn.title = 'Start Presentation';
-            }
-        }
-
         // WebSocket initialization and event handlers
         function initializeWebSocket() {
             try {
@@ -997,7 +909,6 @@
                     
                     // Stop/pause the timer
                     stopTimer();
-                    stopCurrentSlideElapsedTimer();
                 });
                 
                 socket.on('presentation_closed', function(data) {
@@ -1513,6 +1424,12 @@
                 stopCurrentSlideElapsedTimer();
             }
         }
+
+        // Re-acquire wake lock if page becomes visible again and presentation is running
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && isPresentationMode && isPlaying) {
+            }
+        });
     </script>
 </body>
 </html> 
