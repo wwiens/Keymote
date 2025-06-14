@@ -31,6 +31,18 @@ slide_monitor = {
     'keynote_document_path': None  # Path to the current Keynote document
 }
 
+# [REFAC] Timer Overhaul: Remove all timer tracking logic from the server. Only persist timer state sent from the client.
+
+# Remove all uses of slide_monitor['slide_timer_start'], slide_monitor['presentation_start_time'], slide_monitor['slide_timers'] for tracking elapsed time.
+# Add a new timer_state dict to persist the latest timer state from the client.
+timer_state = {
+    'presentationTimer': {
+        'elapsed': 0,
+        'isRunning': False
+    },
+    'slideTimers': {}
+}
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -1975,6 +1987,21 @@ def batch_update_slide_timings():
             "status": "error",
             "message": str(e)
         })
+
+@app.route('/timer_state', methods=['GET', 'PUT'])
+def timer_state_endpoint():
+    global timer_state
+    if request.method == 'GET':
+        return jsonify({ 'status': 'success', 'timerState': timer_state })
+    elif request.method == 'PUT':
+        data = request.get_json()
+        if not data:
+            return jsonify({ 'status': 'error', 'message': 'No data provided' }), 400
+        # Validate and update timer_state
+        timer_state['presentationTimer'] = data.get('presentationTimer', timer_state['presentationTimer'])
+        timer_state['slideTimers'] = data.get('slideTimers', timer_state['slideTimers'])
+        # Optionally persist to disk (not shown here)
+        return jsonify({ 'status': 'success', 'timerState': timer_state })
 
 if __name__ == '__main__':
     # To make it accessible from your iPhone, you need to use your Mac's local IP address

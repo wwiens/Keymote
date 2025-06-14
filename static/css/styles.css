@@ -465,6 +465,8 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
 .time-info-group {
@@ -478,12 +480,14 @@ body {
     font-size: 18px;
     font-weight: 400;
     margin-bottom: 2px;
+    text-align: center;
 }
 
 .value {
     font-size: 32px;
     font-weight: 500;
     font-family: 'Montserrat', sans-serif;
+    text-align: center;
 }
 
 /* Colors */
@@ -978,4 +982,65 @@ body {
     .slides-container::-webkit-scrollbar {
         width: 3px;
     }
+}
+
+.main-time-numbers {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+.main-time-display {
+    font-size: 96px;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    text-align: center;
+    color: #31971f;
+    line-height: 0.8;
+    letter-spacing: 2px;
+    width: 100%;
+    display: block;
+}
+
+.main-time-hours {
+    font-size: 96px;
+    font-weight: 400;
+    font-family: 'Montserrat', sans-serif;
+    color: #8e8e93;
+    text-align: center;
+    line-height: 0.8;
+    letter-spacing: 2px;
+}
+
+.main-time-minutes {
+    font-size: 96px;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    color: #31971f;
+    text-align: center;
+    line-height: 0.8;
+    letter-spacing: 2px;
+}
+
+.main-time-seconds {
+    font-size: 96px;
+    font-weight: 400;
+    font-family: 'Montserrat', sans-serif;
+    color: #fff;
+    text-align: center;
+    line-height: 0.8;
+    letter-spacing: 2px;
+}
+
+.main-time-colon {
+    font-size: 96px;
+    font-weight: 400;
+    font-family: 'Montserrat', sans-serif;
+    color: #8e8e93;
+    text-align: center;
+    line-height: 0.8;
+    letter-spacing: 2px;
+    margin: 0 2px;
 }

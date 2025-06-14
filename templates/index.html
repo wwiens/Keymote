@@ -40,52 +40,42 @@
             <div class="logo">
                 <img src="static/images/keymotelogo.png" alt="Keymote" />
             </div>
-            
-            <!-- Dropdown Menu -->
-            <div class="dropdown-menu" id="dropdown-menu">
-                <div class="menu-item" onclick="openPresentation()">
-                    <span class="menu-icon">📁</span>
-                    <span class="menu-text">Open Presentation</span>
-                </div>
-                <div class="menu-item" id="stop-presentation-menu" onclick="stopPresentationFromMenu()" style="display: none;">
-                    <span class="menu-icon">🛑</span>
-                    <span class="menu-text">Stop Presentation</span>
-                </div>
-                <div class="menu-item" onclick="showAbout()">
-                    <span class="menu-icon">ℹ️</span>
-                    <span class="menu-text">About</span>
-                </div>
-                <div class="menu-item" onclick="showHelp()">
-                    <span class="menu-icon">❓</span>
-                    <span class="menu-text">Help</span>
-                </div>
-            </div>
         </header>
+        <!-- Slide X of Y display -->
+        <div class="slide-of-total" style="text-align:center; font-size: 32px; font-weight: 500; color: #ffd60a; margin-top: 0px; margin-bottom: -8px;">
+            Slide <span id="current-slide-number">--</span> of <span id="total-slide-number">--</span>
+        </div>
+
+        <!-- Dropdown Menu -->
+        <div class="dropdown-menu" id="dropdown-menu">
+            <div class="menu-item" onclick="openPresentation()">
+                <span class="menu-icon">📁</span>
+                <span class="menu-text">Open Presentation</span>
+            </div>
+            <div class="menu-item" id="stop-presentation-menu" onclick="stopPresentationFromMenu()" style="display: none;">
+                <span class="menu-icon">🛑</span>
+                <span class="menu-text">Stop Presentation</span>
+            </div>
+            <div class="menu-item" onclick="showAbout()">
+                <span class="menu-icon">ℹ️</span>
+                <span class="menu-text">About</span>
+            </div>
+            <div class="menu-item" onclick="showHelp()">
+                <span class="menu-icon">❓</span>
+                <span class="menu-text">Help</span>
+            </div>
+        </div>
 
         <!-- Main Time Display -->
-        <div class="time-display">
-            <div class="time-numbers">
-                <div class="digit-grid">
-                    <span class="time-digit gray" id="hours-tens">0</span>
-                    <span class="time-digit gray" id="hours-ones">0</span>
-                    <span class="time-label gray">h</span>
-                    <span class="time-digit green" id="minutes-tens">0</span>
-                    <span class="time-digit green" id="minutes-ones">0</span>
-                    <span class="time-label green">m</span>
-                    <span class="time-digit white" id="seconds-tens">0</span>
-                    <span class="time-digit white" id="seconds-ones">0</span>
-                    <span class="time-label white">s</span>
-                </div>
+        <div class="time-display" style="display: block; margin-bottom: 60px; height: auto;">
+            <div class="main-time-numbers">
+                <span id="main-time-hours" class="main-time-hours">00</span>
+                <span class="main-time-colon">:</span>
+                <span id="main-time-minutes" class="main-time-minutes">00</span>
+                <span class="main-time-colon">:</span>
+                <span id="main-time-seconds" class="main-time-seconds">00</span>
             </div>
-            <div class="time-info-section">
-                <div class="time-info">
-                    <span class="label yellow">Current Slide</span>
-                    <span class="value white" id="current-slide-display">--</span>
-                </div>
-                <div class="time-info">
-                    <span class="label yellow">Total Slides</span>
-                    <span class="value white" id="total-slides-display">--</span>
-                </div>
+            <div class="timer-below-info" style="display: flex; justify-content: center; gap: 40px; margin-top: -10px;">
                 <div class="time-info">
                     <span class="label yellow">Total Time</span>
                     <span class="value white" id="total-time-display">0:00:00</span>
@@ -94,26 +84,30 @@
                     <span class="label yellow">Tracking</span>
                     <span class="value white" id="tracking-display">0:00</span>
                 </div>
+                <div class="time-info">
+                    <span class="label yellow">Target Time</span>
+                    <span class="value white" id="target-time-display">3:00:00</span>
+                </div>
             </div>
         </div>
 
         <!-- Control Buttons -->
         <div class="controls">
-            <button class="control-btn" id="start-btn" onclick="goToFirstSlide()">
+            <!--<button class="control-btn" id="start-btn" onclick="goToFirstSlide()">
                 <img src="static/images/start.svg" alt="First Slide" />
-            </button>
+            </button>-->
             <button class="control-btn" id="previous-btn" onclick="previousSlide()">
                 <img src="static/images/previous.svg" alt="Previous" />
             </button>
-            <button class="control-btn" id="play-pause-btn" onclick="togglePlayPause()">
+            <button class="control-btn" id="play-pause-btn">
                 <img src="static/images/play.svg" alt="Play" id="play-pause-icon" />
             </button>
             <button class="control-btn" id="next-btn" onclick="nextSlide()">
                 <img src="static/images/next.svg" alt="Next" />
             </button>
-            <button class="control-btn" id="end-btn" onclick="goToLastSlide()">
+            <!--<button class="control-btn" id="end-btn" onclick="goToLastSlide()">
                 <img src="static/images/end.svg" alt="Last Slide" />
-            </button>
+            </button>-->
         </div>
 
         <!-- Slide Progress Container -->
@@ -152,6 +146,162 @@
         window.currentSlideElapsedTimestamp = null;
         window.currentSlideElapsedInterval = null;
 
+        // [REFAC] Timer Overhaul: All time tracking is now client-side. Timer state is updated and sent to the server on every change.
+
+        // --- Timer State ---
+        let presentationTimer = {
+            isRunning: false,
+            startTimestamp: null, // Date.now() when started
+            elapsed: 0,           // seconds
+            pausedAt: null,       // Date.now() when paused
+            totalPaused: 0        // ms
+        };
+        let slideTimers = {}; // { [slideIndex]: { elapsed: seconds, startTimestamp: null, isRunning: false, pausedAt: null, totalPaused: 0 } }
+
+        // --- Timer Logic ---
+        function startPresentationTimer() {
+            if (!presentationTimer.isRunning) {
+                presentationTimer.isRunning = true;
+                presentationTimer.startTimestamp = Date.now();
+                if (presentationTimer.pausedAt) {
+                    presentationTimer.totalPaused += Date.now() - presentationTimer.pausedAt;
+                    presentationTimer.pausedAt = null;
+                }
+                updatePresentationTimerUI();
+                requestAnimationFrame(updatePresentationTimerLoop);
+                syncTimerStateToServer();
+            }
+        }
+        function pausePresentationTimer() {
+            if (presentationTimer.isRunning) {
+                presentationTimer.isRunning = false;
+                presentationTimer.pausedAt = Date.now();
+                updatePresentationTimerUI();
+                syncTimerStateToServer();
+            }
+        }
+        function resetPresentationTimer() {
+            presentationTimer = {
+                isRunning: false,
+                startTimestamp: null,
+                elapsed: 0,
+                pausedAt: null,
+                totalPaused: 0
+            };
+            updatePresentationTimerUI();
+            syncTimerStateToServer();
+        }
+        function updatePresentationTimerLoop() {
+            if (presentationTimer.isRunning) {
+                updatePresentationTimerUI();
+                requestAnimationFrame(updatePresentationTimerLoop);
+            }
+        }
+        function updatePresentationTimerUI() {
+            let elapsed = presentationTimer.elapsed;
+            if (presentationTimer.isRunning && presentationTimer.startTimestamp) {
+                elapsed += Math.floor((Date.now() - presentationTimer.startTimestamp - presentationTimer.totalPaused) / 1000);
+            }
+            // Update UI (reuse existing updateDigitDisplay, etc.)
+            // ...
+        }
+
+        // --- Per-Slide Timer Logic ---
+        function startSlideTimer(slideIndex) {
+            if (!slideTimers[slideIndex]) {
+                slideTimers[slideIndex] = { elapsed: 0, startTimestamp: null, isRunning: false, pausedAt: null, totalPaused: 0 };
+            }
+            let timer = slideTimers[slideIndex];
+            if (!timer.isRunning) {
+                timer.isRunning = true;
+                timer.startTimestamp = Date.now();
+                if (timer.pausedAt) {
+                    timer.totalPaused += Date.now() - timer.pausedAt;
+                    timer.pausedAt = null;
+                }
+                updateSlideTimerUI(slideIndex);
+                requestAnimationFrame(() => updateSlideTimerLoop(slideIndex));
+                syncTimerStateToServer();
+            }
+        }
+        function pauseSlideTimer(slideIndex) {
+            let timer = slideTimers[slideIndex];
+            if (timer && timer.isRunning) {
+                timer.isRunning = false;
+                timer.pausedAt = Date.now();
+                updateSlideTimerUI(slideIndex);
+                syncTimerStateToServer();
+            }
+        }
+        function resetSlideTimer(slideIndex) {
+            slideTimers[slideIndex] = { elapsed: 0, startTimestamp: null, isRunning: false, pausedAt: null, totalPaused: 0 };
+            updateSlideTimerUI(slideIndex);
+            syncTimerStateToServer();
+        }
+        function updateSlideTimerLoop(slideIndex) {
+            let timer = slideTimers[slideIndex];
+            if (timer && timer.isRunning) {
+                updateSlideTimerUI(slideIndex);
+                requestAnimationFrame(() => updateSlideTimerLoop(slideIndex));
+            }
+        }
+        function updateSlideTimerUI(slideIndex) {
+            let timer = slideTimers[slideIndex];
+            let elapsed = timer ? timer.elapsed : 0;
+            if (timer && timer.isRunning && timer.startTimestamp) {
+                elapsed += Math.floor((Date.now() - timer.startTimestamp - timer.totalPaused) / 1000);
+            }
+            // Update UI for this slide (reuse updateCurrentSlideElapsedLabel, etc.)
+            // ...
+        }
+
+        // --- Slide Change Handler ---
+        function onSlideChange(newSlideIndex) {
+            // Pause previous slide timer
+            if (slideTimers[currentSlideIndex]) {
+                pauseSlideTimer(currentSlideIndex);
+            }
+            // Start new slide timer
+            startSlideTimer(newSlideIndex);
+            // Update current slide index
+            currentSlideIndex = newSlideIndex;
+            // Sync all timer state
+            syncTimerStateToServer();
+        }
+
+        // --- Timer Sync to Server ---
+        function syncTimerStateToServer() {
+            // Prepare timer state payload
+            const payload = {
+                presentationTimer: {
+                    elapsed: getPresentationElapsed(),
+                    isRunning: presentationTimer.isRunning
+                },
+                slideTimers: Object.fromEntries(Object.entries(slideTimers).map(([idx, t]) => [idx, { elapsed: getSlideElapsed(idx), isRunning: t.isRunning }]))
+            };
+            // Send to server (POST/PUT to /timer_state or similar endpoint)
+            fetch('/timer_state', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+        function getPresentationElapsed() {
+            let elapsed = presentationTimer.elapsed;
+            if (presentationTimer.isRunning && presentationTimer.startTimestamp) {
+                elapsed += Math.floor((Date.now() - presentationTimer.startTimestamp - presentationTimer.totalPaused) / 1000);
+            }
+            return elapsed;
+        }
+        function getSlideElapsed(slideIndex) {
+            let timer = slideTimers[slideIndex];
+            let elapsed = timer ? timer.elapsed : 0;
+            if (timer && timer.isRunning && timer.startTimestamp) {
+                elapsed += Math.floor((Date.now() - timer.startTimestamp - timer.totalPaused) / 1000);
+            }
+            return elapsed;
+        }
+
         // Utility to format seconds as M:SS
         function formatTime(seconds) {
             const m = Math.floor(seconds / 60);
@@ -159,55 +309,41 @@
             return `${m}:${s.toString().padStart(2, '0')}`;
         }
 
-        // API connection functions
+        // Fetch and display current slide number
         async function fetchCurrentSlide() {
             try {
                 const response = await fetch('/current_slide_number');
                 const data = await response.json();
-                
                 if (data.status === "success" && data.slideNumber !== null && data.slideNumber !== undefined) {
-                    const newSlideIndex = parseInt(data.slideNumber);
-                    const slideChanged = newSlideIndex !== currentSlideIndex;
-                    
-                    currentSlideIndex = newSlideIndex;
-                    document.getElementById('current-slide-display').textContent = data.slideNumber;
+                    currentSlideIndex = parseInt(data.slideNumber);
+                    document.getElementById('current-slide-number').textContent = data.slideNumber;
                     updateCurrentSlideHighlight();
-                    
-                    // Scroll to current slide if it changed
-                    if (slideChanged) {
-                        scrollToCurrentSlide();
-                    }
                 } else {
-                    // No presentation open - reset current slide
                     currentSlideIndex = 0;
-                    document.getElementById('current-slide-display').textContent = '--';
+                    document.getElementById('current-slide-number').textContent = '--';
                 }
             } catch (error) {
-                console.error('Error fetching current slide:', error);
                 currentSlideIndex = 0;
-                document.getElementById('current-slide-display').textContent = '--';
+                document.getElementById('current-slide-number').textContent = '--';
             }
         }
 
+        // Fetch and display total slides
         async function fetchTotalSlides() {
             try {
                 const response = await fetch('/total_slides');
                 const data = await response.json();
-                
                 if (data.status === "success" && data.totalSlides !== null && data.totalSlides !== undefined) {
                     totalSlides = parseInt(data.totalSlides);
-                    document.getElementById('total-slides-display').textContent = data.totalSlides;
+                    document.getElementById('total-slide-number').textContent = data.totalSlides;
                 } else {
                     totalSlides = 0;
-                    document.getElementById('total-slides-display').textContent = '--';
+                    document.getElementById('total-slide-number').textContent = '--';
                 }
-                
-                // Update menu visibility whenever total slides changes
                 updateMenuVisibility();
             } catch (error) {
-                console.error('Error fetching total slides:', error);
                 totalSlides = 0;
-                document.getElementById('total-slides-display').textContent = '--';
+                document.getElementById('total-slide-number').textContent = '--';
                 updateMenuVisibility();
             }
         }
@@ -220,99 +356,56 @@
             ]);
         }
 
-        // Reset timer display to 00:00:00
-        function resetTimerDisplay() {
-            // Reset large digit display
-            document.getElementById('hours-tens').textContent = '0';
-            document.getElementById('hours-ones').textContent = '0';
-            document.getElementById('minutes-tens').textContent = '0';
-            document.getElementById('minutes-ones').textContent = '0';
-            document.getElementById('seconds-tens').textContent = '0';
-            document.getElementById('seconds-ones').textContent = '0';
-            
-            // Reset time info displays
-            document.getElementById('total-time-display').textContent = '0:00:00';
-            document.getElementById('tracking-display').textContent = '0:00';
-        }
-
-        // Clear slides display
-        function clearSlides() {
-            const container = document.getElementById('slides-container');
-            container.innerHTML = '<div class="no-presentation-message" id="no-presentation-message" style="text-align: center; padding: 40px; color: #888; font-style: italic;">No presentation loaded. Use the menu to open a presentation.</div>';
-            
-            // Update menu visibility after clearing slides
-            updateMenuVisibility();
-        }
-
-        // Live update for current slide elapsed time
-        function startCurrentSlideElapsedTimer() {
-            stopCurrentSlideElapsedTimer();
-            if (!(isPresentationMode && typeof currentSlideIndex === 'number' && currentSlideIndex > 0)) return;
-            window.currentSlideElapsedInterval = setInterval(() => {
-                if (!(isPresentationMode && typeof currentSlideIndex === 'number' && currentSlideIndex > 0)) return;
-                if (window.currentSlideElapsedTimestamp) {
-                    const now = Date.now();
-                    const elapsed = window.currentSlideElapsedBase + (now - window.currentSlideElapsedTimestamp) / 1000;
-                    updateCurrentSlideElapsedLabel(Math.floor(elapsed));
+        // Load planned times and update slide labels and total time
+        async function loadTimingFileAndUpdateTotal() {
+            try {
+                const timingResponse = await fetch('/slide_timings/load', { method: 'POST' });
+                const timingData = await timingResponse.json();
+                if (timingData.status === 'success') {
+                    window.timingData = timingData.plannedTimings || {};
+                    // Calculate and display total planned time
+                    if (timingData.totalPlannedTime) {
+                        const totalSeconds = timingData.totalPlannedTime;
+                        const hours = Math.floor(totalSeconds / 3600);
+                        const minutes = Math.floor((totalSeconds % 3600) / 60);
+                        const seconds = Math.floor(totalSeconds % 60);
+                        const formattedTime = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                        document.getElementById('total-time-display').textContent = formattedTime;
+                    }
+                    // Generate slides with planned times only
+                    if (totalSlides > 0) {
+                        generateSlides(totalSlides, timingData.plannedTimings || {});
+                    }
+                } else {
+                    document.getElementById('total-time-display').textContent = '0:00:00';
+                    window.timingData = {};
+                    if (totalSlides > 0) {
+                        generateSlides(totalSlides, {});
+                    }
                 }
-            }, 1000);
-        }
-        function stopCurrentSlideElapsedTimer() {
-            if (window.currentSlideElapsedInterval) {
-                clearInterval(window.currentSlideElapsedInterval);
-                window.currentSlideElapsedInterval = null;
-            }
-        }
-        function updateCurrentSlideElapsedLabel(elapsedSeconds) {
-            const slideElement = document.getElementById(`slide-${currentSlideIndex}`);
-            if (slideElement) {
-                const plannedTime = (window.timingData && window.timingData[currentSlideIndex]) ? window.timingData[currentSlideIndex] : 60;
-                const label = slideElement.querySelector('.slide-label');
-                if (label) {
-                    label.innerHTML = `Slide <span class=\"slide-number\">${currentSlideIndex}</span>`;
-                }
-                // Hide .progress-time for current slide
-                const progressTime = slideElement.querySelector('.progress-time');
-                if (progressTime) {
-                    progressTime.innerHTML = `<span class=\"elapsed-time\">${formatTime(elapsedSeconds)}</span> of <span class=\"planned-time\">${formatTime(plannedTime)}</span>`;
+            } catch (error) {
+                document.getElementById('total-time-display').textContent = '0:00:00';
+                window.timingData = {};
+                if (totalSlides > 0) {
+                    generateSlides(totalSlides, {});
                 }
             }
         }
 
-        // Generate slide elements dynamically
+        // Generate slide elements with planned time only
         function generateSlides(slideCount, timings = {}) {
             const container = document.getElementById('slides-container');
             const noMessageElement = document.getElementById('no-presentation-message');
-            
-            // Remove "no presentation" message
-            if (noMessageElement) {
-                noMessageElement.remove();
-            }
-            
-            // Clear existing slides
+            if (noMessageElement) noMessageElement.remove();
             container.innerHTML = '';
-            
             for (let i = 1; i <= slideCount; i++) {
                 const slideElement = document.createElement('div');
                 slideElement.className = 'slide-progress editable-slide';
                 slideElement.id = `slide-${i}`;
-                
-                // Get timing for this slide (default to 1:00 if not available)
                 const slideTimingSeconds = timings[i] || 60;
                 const plannedTimeDisplay = formatTime(slideTimingSeconds);
-                let labelHtml = '';
-                let progressTimeHtml = '';
-                
-                // If this is the current slide and presentation is running, show elapsed time and hide .progress-time
-                if (i === currentSlideIndex && isPresentationMode && typeof window.currentSlideElapsed === 'number') {
-                    const elapsedDisplay = formatTime(window.currentSlideElapsed);
-                    labelHtml = `<span class=\"slide-label\">Slide <span class=\"slide-number\">${i}</span></span>`;
-                    progressTimeHtml = `<span class=\"progress-time editable-time\"><span class=\"elapsed-time\">${elapsedDisplay}</span> of <span class=\"planned-time\">${plannedTimeDisplay}</span></span>`;
-                } else {
-                    labelHtml = `<span class=\"slide-label\">Slide <span class=\"slide-number\">${i}</span></span>`;
-                    progressTimeHtml = `<span class=\"progress-time editable-time\"><span class=\"planned-time\">${plannedTimeDisplay}</span></span>`;
-                }
-                
+                const labelHtml = `<span class="slide-label">Slide <span class="slide-number">${i}</span></span>`;
+                const progressTimeHtml = `<span class="progress-time editable-time"><span class="planned-time">${plannedTimeDisplay}</span></span>`;
                 slideElement.innerHTML = `
                     ${labelHtml}
                     ${progressTimeHtml}
@@ -322,32 +415,15 @@
                         </svg>
                     </button>
                 `;
-                
-                // Add click handler for navigation to slide
                 slideElement.addEventListener('click', function(event) {
-                    // Don't trigger navigation if clicking on the edit button
-                    if (event.target.closest('.edit-icon')) {
-                        return;
-                    }
-                    
-                    // Don't trigger navigation if currently editing time
-                    if (slideElement.classList.contains('editing')) {
-                        return;
-                    }
-                    
+                    if (event.target.closest('.edit-icon')) return;
+                    if (slideElement.classList.contains('editing')) return;
                     navigateToSlide(i);
                 });
-                
-                // Add cursor pointer style for clickable slides
                 slideElement.style.cursor = 'pointer';
-                
                 container.appendChild(slideElement);
             }
-            
-            // Update current slide highlight
             updateCurrentSlideHighlight();
-            
-            // Update menu visibility after generating slides
             updateMenuVisibility();
         }
 
@@ -406,58 +482,6 @@
                     targetScrollTop: targetScrollTop,
                     finalPosition: Math.max(0, targetScrollTop)
                 });
-            }
-        }
-
-        // Load timing file and generate slides
-        async function loadTimingFileAndUpdateTotal() {
-            try {
-                // First, load the slide timings
-                const timingResponse = await fetch('/slide_timings/load', {
-                    method: 'POST'
-                });
-                const timingData = await timingResponse.json();
-                
-                if (timingData.status === 'success') {
-                    // Store timing data globally
-                    window.timingData = timingData.plannedTimings || {};
-                    
-                    if (timingData.totalPlannedTime) {
-                        // Convert seconds to hours:minutes:seconds format
-                        const totalSeconds = timingData.totalPlannedTime;
-                        const hours = Math.floor(totalSeconds / 3600);
-                        const minutes = Math.floor((totalSeconds % 3600) / 60);
-                        const seconds = Math.floor(totalSeconds % 60);
-                        
-                        const formattedTime = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                        document.getElementById('total-time-display').textContent = formattedTime;
-                        
-                        console.log(`✅ Loaded timing for ${Object.keys(timingData.plannedTimings || {}).length} slides, total time: ${formattedTime}`);
-                    }
-                    
-                    // If we have slides and timing data, generate slides
-                    if (totalSlides > 0) {
-                        generateSlides(totalSlides, timingData.plannedTimings || {});
-                    }
-                } else {
-                    console.log('⚠️ No timing data available or error loading timings');
-                    document.getElementById('total-time-display').textContent = '0:00:00';
-                    window.timingData = {};
-                    
-                    // If we have slides but no timing data, still generate slides with defaults
-                    if (totalSlides > 0) {
-                        generateSlides(totalSlides, {});
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading timing file:', error);
-                document.getElementById('total-time-display').textContent = '0:00:00';
-                window.timingData = {};
-                
-                // If we have slides but timing loading failed, still generate slides
-                if (totalSlides > 0) {
-                    generateSlides(totalSlides, {});
-                }
             }
         }
 
@@ -570,7 +594,6 @@
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', async function() {
             // Initialize UI state
-            updatePlayPauseButton();
             
             // Initialize WebSocket connection for real-time updates
             initializeWebSocket();
@@ -607,7 +630,6 @@
                     // Reset presentation state
                     isPresentationMode = false;
                     isPlaying = false;
-                    updatePlayPauseButton();
                     
                     // Clear timing data
                     window.timingData = {};
@@ -630,6 +652,56 @@
             
             // Add hamburger menu click listener
             document.getElementById('hamburger-menu').addEventListener('click', toggleMenu);
+
+            // Add play/pause toggle logic for the Play button
+            async function togglePlayPause() {
+                const playPauseIcon = document.getElementById('play-pause-icon');
+                if (!isPresentationMode || !isPlaying) {
+                    // Not in presentation mode: start presentation via backend
+                    try {
+                        const response = await fetch('/start_presentation');
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            if (playPauseIcon) playPauseIcon.src = 'static/images/pause.svg';
+                        } else {
+                            alert('Failed to start presentation: ' + (data.message || 'Unknown error'));
+                            if (playPauseIcon) playPauseIcon.src = 'static/images/play.svg';
+                        }
+                    } catch (error) {
+                        alert('Error starting presentation. Make sure Keynote is running.');
+                        if (playPauseIcon) playPauseIcon.src = 'static/images/play.svg';
+                    }
+                } else {
+                    // Presentation is running: stop presentation via backend
+                    try {
+                        const response = await fetch('/stop_presentation');
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            // Backend will emit presentation_stopped event, which will update UI and timers
+                            if (playPauseIcon) playPauseIcon.src = 'static/images/play.svg';
+                        } else {
+                            alert('Failed to stop presentation: ' + (data.message || 'Unknown error'));
+                            // Fallback: pause timers locally
+                            pausePresentationTimer();
+                            if (slideTimers[currentSlideIndex]) {
+                                pauseSlideTimer(currentSlideIndex);
+                            }
+                            if (playPauseIcon) playPauseIcon.src = 'static/images/play.svg';
+                        }
+                    } catch (error) {
+                        alert('Error stopping presentation. Make sure Keynote is running.');
+                        // Fallback: pause timers locally
+                        pausePresentationTimer();
+                        if (slideTimers[currentSlideIndex]) {
+                            pauseSlideTimer(currentSlideIndex);
+                        }
+                        if (playPauseIcon) playPauseIcon.src = 'static/images/play.svg';
+                    }
+                }
+            }
+
+            // Add play/pause button event listener
+            document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
         });
 
         // Cleanup timer on page unload
@@ -712,7 +784,6 @@
                 if (data.status === 'success') {
                     console.log(`✅ Successfully navigated to slide ${slideNumber}: ${data.message}`);
                     // Update will happen automatically via monitoring/WebSocket
-                    setCurrentSlideElapsedFromBackend(slideNumber);
                 } else {
                     console.error(`❌ Failed to navigate to slide ${slideNumber}:`, data.message);
                     alert(`Failed to navigate to slide ${slideNumber}: ` + (data.message || 'Unknown error'));
@@ -848,8 +919,8 @@
                     totalSlides = data.totalSlides;
                     
                     // Update UI
-                    document.getElementById('current-slide-display').textContent = data.slideNumber;
-                    document.getElementById('total-slides-display').textContent = data.totalSlides;
+                    document.getElementById('current-slide-number').textContent = data.slideNumber;
+                    document.getElementById('total-slide-number').textContent = data.totalSlides;
                     updateCurrentSlideHighlight();
                     
                     // Update tracking display if timer is running
@@ -866,18 +937,13 @@
                     if (data.presentationRunning !== undefined) {
                         isPresentationMode = data.presentationRunning;
                         isPlaying = data.presentationRunning;
-                        updatePlayPauseButton();
                     }
-                    
-                    // Update current slide elapsed time and regenerate slides
-                    setCurrentSlideElapsedFromBackend(data.slideNumber);
                 });
                 
                 socket.on('presentation_started', function(data) {
                     console.log('🎬 Presentation started event:', data);
                     isPresentationMode = true;
                     isPlaying = true;
-                    updatePlayPauseButton();
                     updateMenuVisibility();
                     
                     // Start the timer
@@ -887,7 +953,7 @@
                     if (data.currentSlide) {
                         const oldSlideIndex = currentSlideIndex;
                         currentSlideIndex = data.currentSlide;
-                        document.getElementById('current-slide-display').textContent = data.currentSlide;
+                        document.getElementById('current-slide-number').textContent = data.currentSlide;
                         updateCurrentSlideHighlight();
                         
                         // Scroll to current slide if it changed
@@ -895,17 +961,12 @@
                             scrollToCurrentSlide();
                         }
                     }
-                    
-                    // Update current slide elapsed time and regenerate slides
-                    setCurrentSlideElapsedFromBackend(data.currentSlide);
                 });
                 
                 socket.on('presentation_stopped', function(data) {
                     console.log('🛑 Presentation stopped event:', data);
                     isPresentationMode = false;
                     isPlaying = false;
-                    updatePlayPauseButton();
-                    updateMenuVisibility();
                     
                     // Stop/pause the timer
                     stopTimer();
@@ -917,7 +978,6 @@
                     // Reset presentation state
                     isPresentationMode = false;
                     isPlaying = false;
-                    updatePlayPauseButton();
                     
                     // Reset timer and display
                     resetTimer();
@@ -925,8 +985,8 @@
                     // Reset slide displays
                     currentSlideIndex = 1;
                     totalSlides = 0;
-                    document.getElementById('current-slide-display').textContent = '--';
-                    document.getElementById('total-slides-display').textContent = '--';
+                    document.getElementById('current-slide-number').textContent = '--';
+                    document.getElementById('total-slide-number').textContent = '--';
                     document.getElementById('total-time-display').textContent = '0:00:00'; // Reset Total Time
                     
                     // Clear timing data
@@ -939,7 +999,6 @@
                     updateMenuVisibility();
                     
                     console.log('✅ UI reset for closed presentation - Total Time set to 0:00:00');
-                    stopCurrentSlideElapsedTimer();
                 });
                 
                 socket.on('monitoring_status', function(data) {
@@ -1175,7 +1234,6 @@
             pauseStartTime = null;
             totalPausedTime = 0;
             
-            resetTimerDisplay();
             console.log('🔄 Timer reset');
         }
 
@@ -1183,38 +1241,29 @@
             if (!presentationStartTime) {
                 return;
             }
-            
             // Calculate total elapsed time in seconds
             const currentTime = Date.now();
             const totalElapsedMs = currentTime - presentationStartTime - totalPausedTime;
             totalElapsedSeconds = Math.floor(totalElapsedMs / 1000);
-            
             // Convert to hours, minutes, seconds
             const hours = Math.floor(totalElapsedSeconds / 3600);
             const minutes = Math.floor((totalElapsedSeconds % 3600) / 60);
             const seconds = totalElapsedSeconds % 60;
-            
-            // Update large digit display
-            updateDigitDisplay('hours', hours);
-            updateDigitDisplay('minutes', minutes);
-            updateDigitDisplay('seconds', seconds);
-            
+            // Update new main time display
+            const mainTimeDisplay = document.getElementById('main-time-hours');
+            if (mainTimeDisplay) {
+                mainTimeDisplay.textContent = hours.toString().padStart(2, '0');
+            }
+            const mainTimeMinutes = document.getElementById('main-time-minutes');
+            if (mainTimeMinutes) {
+                mainTimeMinutes.textContent = minutes.toString().padStart(2, '0');
+            }
+            const mainTimeSeconds = document.getElementById('main-time-seconds');
+            if (mainTimeSeconds) {
+                mainTimeSeconds.textContent = seconds.toString().padStart(2, '0');
+            }
             // Update tracking display (difference from planned time)
             updateTrackingDisplay();
-        }
-
-        function updateDigitDisplay(unit, value) {
-            const tens = Math.floor(value / 10);
-            const ones = value % 10;
-            
-            const tensElement = document.getElementById(`${unit}-tens`);
-            const onesElement = document.getElementById(`${unit}-ones`);
-            
-            if (tensElement) tensElement.textContent = tens.toString();
-            if (onesElement) onesElement.textContent = ones.toString();
-            
-            // Update colors based on time progression
-            updateDigitColors(unit, value);
         }
 
         function getTrackingStatus() {
@@ -1238,91 +1287,6 @@
                 return 'losing_progress'; // Orange - 60 seconds to 2 minutes behind
             } else {
                 return 'off_track'; // Red - More than 2 minutes behind
-            }
-        }
-
-        function updateDigitColors(unit, value) {
-            const tensElement = document.getElementById(`${unit}-tens`);
-            const onesElement = document.getElementById(`${unit}-ones`);
-            
-            if (!tensElement || !onesElement) return;
-            
-            // Remove existing color classes
-            ['gray', 'green', 'white', 'yellow', 'red'].forEach(color => {
-                tensElement.classList.remove(color);
-                onesElement.classList.remove(color);
-            });
-            
-            // Color logic based on time progression
-            if (unit === 'hours') {
-                if (value === 0) {
-                    tensElement.classList.add('gray');
-                    onesElement.classList.add('gray');
-                } else {
-                    tensElement.classList.add('red');
-                    onesElement.classList.add('red');
-                }
-            } else if (unit === 'minutes') {
-                // Use tracking status for minute colors
-                const trackingStatus = getTrackingStatus();
-                if (trackingStatus === 'on_time') {
-                    tensElement.classList.add('green');
-                    onesElement.classList.add('green');
-                } else if (trackingStatus === 'losing_progress') {
-                    tensElement.classList.add('yellow');
-                    onesElement.classList.add('yellow');
-                } else { // off_track
-                    tensElement.classList.add('red');
-                    onesElement.classList.add('red');
-                }
-            } else if (unit === 'seconds') {
-                tensElement.classList.add('white');
-                onesElement.classList.add('white');
-            }
-            
-            // Update corresponding labels
-            updateLabelColors(unit, value);
-        }
-
-        function updateLabelColors(unit, value) {
-            // Find the label element (it's the third element in each group)
-            const labelElements = document.querySelectorAll('.time-label');
-            let labelElement = null;
-            
-            if (unit === 'hours' && labelElements[0]) {
-                labelElement = labelElements[0]; // h label
-            } else if (unit === 'minutes' && labelElements[1]) {
-                labelElement = labelElements[1]; // m label
-            } else if (unit === 'seconds' && labelElements[2]) {
-                labelElement = labelElements[2]; // s label
-            }
-            
-            if (!labelElement) return;
-            
-            // Remove existing color classes
-            ['gray', 'green', 'white', 'yellow', 'red'].forEach(color => {
-                labelElement.classList.remove(color);
-            });
-            
-            // Apply same color logic as digits
-            if (unit === 'hours') {
-                if (value === 0) {
-                    labelElement.classList.add('gray');
-                } else {
-                    labelElement.classList.add('red');
-                }
-            } else if (unit === 'minutes') {
-                // Use tracking status for minute label colors
-                const trackingStatus = getTrackingStatus();
-                if (trackingStatus === 'on_time') {
-                    labelElement.classList.add('green');
-                } else if (trackingStatus === 'losing_progress') {
-                    labelElement.classList.add('yellow');
-                } else { // off_track
-                    labelElement.classList.add('red');
-                }
-            } else if (unit === 'seconds') {
-                labelElement.classList.add('white');
             }
         }
 
@@ -1372,64 +1336,29 @@
             }
         }
 
-        // In WebSocket event handlers, update window.currentSlideElapsed and regenerate slides
-        function updateCurrentSlideElapsedAndSlides(data) {
-            // Try to get elapsed time from timingStatus or currentTiming
-            let elapsed = 0;
-            if (data && data.timingStatus && typeof data.timingStatus.actualTime === 'number') {
-                elapsed = data.timingStatus.actualTime;
-            } else if (data && data.currentTiming && typeof data.currentTiming.actualTime === 'number') {
-                elapsed = data.currentTiming.actualTime;
-            } else {
-                elapsed = 0;
-            }
-            window.currentSlideElapsed = Math.floor(elapsed);
-            window.currentSlideElapsedBase = Math.floor(elapsed);
-            window.currentSlideElapsedTimestamp = Date.now();
-            // Regenerate slides to update label
-            if (typeof totalSlides === 'number' && totalSlides > 0 && window.timingData) {
-                generateSlides(totalSlides, window.timingData);
-            }
-            // Start live timer if presentation is running
-            if (isPresentationMode) {
-                startCurrentSlideElapsedTimer();
-            } else {
-                stopCurrentSlideElapsedTimer();
-            }
-        }
-
-        // Fetch accumulated time for a slide from the backend
-        async function fetchAccumulatedTimeForSlide(slideNumber) {
-            try {
-                const response = await fetch(`/slide_timings/slide/${slideNumber}`);
-                const data = await response.json();
-                if (data.status === 'success' && data.timingStatus && typeof data.timingStatus.actualTime === 'number') {
-                    return Math.floor(data.timingStatus.actualTime);
-                }
-            } catch (e) {
-                console.error('Failed to fetch accumulated time for slide', slideNumber, e);
-            }
-            return 0;
-        }
-
-        // Update current slide elapsed and start timer from accumulated value
-        async function setCurrentSlideElapsedFromBackend(slideNumber) {
-            const baseElapsed = await fetchAccumulatedTimeForSlide(slideNumber);
-            window.currentSlideElapsed = baseElapsed;
-            window.currentSlideElapsedBase = baseElapsed;
-            window.currentSlideElapsedTimestamp = Date.now();
-            if (isPresentationMode) {
-                startCurrentSlideElapsedTimer();
-            } else {
-                stopCurrentSlideElapsedTimer();
-            }
-        }
-
         // Re-acquire wake lock if page becomes visible again and presentation is running
         document.addEventListener('visibilitychange', async () => {
             if (document.visibilityState === 'visible' && isPresentationMode && isPlaying) {
             }
         });
+
+        // Utility to clear slides and show the no-presentation message
+        function clearSlides() {
+            const container = document.getElementById('slides-container');
+            if (container) {
+                container.innerHTML = '';
+                // Add the no-presentation message back in
+                const noMessage = document.createElement('div');
+                noMessage.className = 'no-presentation-message';
+                noMessage.id = 'no-presentation-message';
+                noMessage.style.textAlign = 'center';
+                noMessage.style.padding = '40px';
+                noMessage.style.color = '#888';
+                noMessage.style.fontStyle = 'italic';
+                noMessage.textContent = 'No presentation loaded. Use the menu to open a presentation.';
+                container.appendChild(noMessage);
+            }
+        }
     </script>
 </body>
 </html> 
