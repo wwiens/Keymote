@@ -316,13 +316,10 @@
                     currentSlideIndex = parseInt(data.slideNumber);
                     document.getElementById('current-slide-number').textContent = data.slideNumber;
                     
-                    console.log('📡 Fetched current slide:', currentSlideIndex, 'was:', oldSlideIndex);
-                    
                     updateCurrentSlideHighlight();
                     
                     // Trigger scroll if slide actually changed
                     if (oldSlideIndex !== currentSlideIndex) {
-                        console.log('🔄 Slide changed via fetch, triggering scroll');
                         scrollToCurrentSlideDebounced();
                     }
                 } else {
@@ -442,8 +439,6 @@
 
         // Update current slide highlighting
         function updateCurrentSlideHighlight() {
-            console.log('🎯 Updating slide highlight for slide', currentSlideIndex);
-            
             // Remove current highlighting
             document.querySelectorAll('.slide-progress').forEach(slide => {
                 slide.classList.remove('current-slide');
@@ -461,19 +456,15 @@
                 if (slideNumber) {
                     slideNumber.classList.add('yellow');
                 }
-                
-            } else {
-                console.warn('⚠️ Current slide element not found:', `slide-${currentSlideIndex}`);
             }
         }
 
-        // Enhanced scroll function - always scroll to top
+        // Scroll the current slide to the top of the slides container
         function ensureCurrentSlideVisible() {
             const currentSlideElement = document.getElementById(`slide-${currentSlideIndex}`);
             const slidesContainer = document.getElementById('slides-container');
             
             if (!currentSlideElement || !slidesContainer) {
-                console.warn('⚠️ Scroll failed: Missing elements', { currentSlideIndex, currentSlideElement: !!currentSlideElement, slidesContainer: !!slidesContainer });
                 return;
             }
             
@@ -484,34 +475,13 @@
             // Calculate the slide's position relative to the container's content
             const relativeTop = slideRect.top - containerRect.top + slidesContainer.scrollTop;
             
-            console.log('📍 Scrolling to slide', currentSlideIndex, 'relativeTop:', relativeTop, 'slideRect.top:', slideRect.top, 'containerRect.top:', containerRect.top, 'currentScrollTop:', slidesContainer.scrollTop);
-            
             slidesContainer.scrollTo({
                 top: relativeTop,
                 behavior: 'smooth'
             });
         }
 
-        // Scroll the current slide to the top of the slides container
-        function scrollToCurrentSlide() {
-            const currentSlideElement = document.getElementById(`slide-${currentSlideIndex}`);
-            const slidesContainer = document.getElementById('slides-container');
-            
-            if (currentSlideElement && slidesContainer) {
-                // Calculate position relative to slides container
-                const slideRect = currentSlideElement.getBoundingClientRect();
-                const containerRect = slidesContainer.getBoundingClientRect();
-                
-                // Calculate the slide's position relative to the container's content
-                const relativeTop = slideRect.top - containerRect.top + slidesContainer.scrollTop;
-                
-                // Scroll to bring the slide to the top of the container
-                slidesContainer.scrollTo({
-                    top: relativeTop,
-                    behavior: 'smooth'
-                });
-            }
-        }
+
 
         // Debounced version to prevent multiple rapid calls
         let scrollToCurrentSlideTimeout = null;
@@ -523,10 +493,9 @@
             
             // Set a new timeout to ensure DOM has settled
             scrollToCurrentSlideTimeout = setTimeout(() => {
-                console.log('⏰ Debounced scroll executing for slide', currentSlideIndex);
                 ensureCurrentSlideVisible();
                 scrollToCurrentSlideTimeout = null;
-            }, 10); // Reduced delay for faster response
+            }, 10); // Small delay for faster response
         }
 
         // Check if we just returned from opening a presentation
@@ -653,32 +622,10 @@
             }
         };
 
-        // Add scroll debugging functions
+        // Add scroll debugging functions (for development/troubleshooting)
         window.scrollDebug = {
-            scrollToCurrentSlide: scrollToCurrentSlide,
-            scrollToCurrentSlideDebounced: scrollToCurrentSlideDebounced,
             ensureCurrentSlideVisible: ensureCurrentSlideVisible,
             forceScroll: function() {
-                console.log('🚀 Force scrolling to slide', currentSlideIndex);
-                const element = document.getElementById(`slide-${currentSlideIndex}`);
-                const container = document.getElementById('slides-container');
-                if (element && container) {
-                    const slideRect = element.getBoundingClientRect();
-                    const containerRect = container.getBoundingClientRect();
-                    const relativeTop = slideRect.top - containerRect.top + container.scrollTop;
-                    
-                    console.log('Found elements, scrolling to relativeTop:', relativeTop, 'slideRect.top:', slideRect.top, 'containerRect.top:', containerRect.top);
-                    container.scrollTo({
-                        top: relativeTop,
-                        behavior: 'smooth'
-                    });
-                } else {
-                    console.error('Missing elements:', { element: !!element, container: !!container });
-                }
-            },
-            testScroll: function() {
-                console.log('🧪 Testing scroll function');
-                console.log('Current slide index:', currentSlideIndex);
                 ensureCurrentSlideVisible();
             }
         };
@@ -742,7 +689,6 @@
                 }
                 // If slide changed but total didn't change, ensure scroll happens
                 else if (oldCurrentSlide !== currentSlideIndex && totalSlides > 0) {
-                    console.log('🔄 Slide change detected via polling, ensuring scroll');
                     scrollToCurrentSlideDebounced();
                 }
             }, 2000);
@@ -1000,10 +946,7 @@
                     
                     // Scroll to current slide if it actually changed
                     if (oldSlideIndex !== currentSlideIndex) {
-                        console.log('🔄 WebSocket slide change, triggering scroll');
                         scrollToCurrentSlideDebounced();
-                    } else {
-                        console.log('🔄 WebSocket slide change, but same slide - no scroll needed');
                     }
                     
                     // Update presentation state if provided
