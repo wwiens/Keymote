@@ -594,8 +594,14 @@ body {
     overflow-x: hidden;
     padding-right: 8px;
     margin-right: -8px;
-    min-height: 0; /* Allow flexbox to shrink */
-    scroll-behavior: smooth; /* Ensure smooth scrolling */
+    min-height: 0;
+    scroll-behavior: smooth;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+.slides-container .slide-progress:first-child {
+    margin-top: 0 !important;
 }
 
 /* Auto-scroll animation state */
@@ -1007,9 +1013,9 @@ body {
 }
 
 .main-time-hours {
-    font-size: 82px;
+    font-size: 123px;
     font-weight: 400;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Bebas Neue', 'Montserrat', sans-serif;
     color: #8e8e93;
     text-align: center;
     line-height: 0.8;
@@ -1017,9 +1023,9 @@ body {
 }
 
 .main-time-minutes {
-    font-size: 82px;
-    font-weight: 700;
-    font-family: 'Montserrat', sans-serif;
+    font-size: 123px;
+    font-weight: 400;
+    font-family: 'Bebas Neue', 'Montserrat', sans-serif;
     color: #31971f;
     text-align: center;
     line-height: 0.8;
@@ -1027,9 +1033,9 @@ body {
 }
 
 .main-time-seconds {
-    font-size: 82px;
+    font-size: 123px;
     font-weight: 400;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Bebas Neue', 'Montserrat', sans-serif;
     color: #fff;
     text-align: center;
     line-height: 0.8;
@@ -1037,14 +1043,17 @@ body {
 }
 
 .main-time-colon {
-    font-size: 82px;
+    font-size: 123px;
     font-weight: 400;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Bebas Neue', 'Montserrat', sans-serif;
     color: #8e8e93;
     text-align: center;
-    line-height: 0.8;
+    line-height: 1;
     letter-spacing: 2px;
     margin: 0 2px;
+    display: inline-block;
+    position: relative;
+    top: -10px;
 }
 
 /* Navigation Button Sizing */
@@ -1064,4 +1073,9 @@ body {
 #previous-btn img, #next-btn img {
     width: 56px !important;
     height: 56px !important;
+}
+
+#current-slide-number,
+#total-slide-number {
+    color: #fff !important;
 }

@@ -2003,6 +2003,38 @@ def timer_state_endpoint():
         # Optionally persist to disk (not shown here)
         return jsonify({ 'status': 'success', 'timerState': timer_state })
 
+@app.route('/close_presentation', methods=['POST'])
+def close_presentation():
+    """Close the currently open Keynote presentation file"""
+    script = """
+    tell application \"Keynote\"
+        if exists front document then
+            close front document saving yes
+            return \"Presentation closed.\"
+        else
+            return \"No Keynote document open.\"
+        end if
+    end tell
+    """
+    response = run_applescript(script)
+    if response.startswith("No Keynote document open"):
+        return jsonify({"status": "error", "message": response})
+    # Reset all timing state and emit closed event
+    slide_monitor['current_slide'] = None
+    slide_monitor['total_slides'] = None
+    slide_monitor['presentation_running'] = False
+    slide_monitor['slide_timer_start'] = None
+    slide_monitor['presentation_start_time'] = None
+    slide_monitor['slide_timers'] = {}
+    slide_monitor['planned_timings'] = {}
+    slide_monitor['timing_file_path'] = None
+    slide_monitor['keynote_document_path'] = None
+    socketio.emit('presentation_closed', {
+        'timestamp': time.time(),
+        'message': 'Presentation file closed - timing reset'
+    })
+    return jsonify({"status": "success", "message": response})
+
 if __name__ == '__main__':
     # To make it accessible from your iPhone, you need to use your Mac's local IP address
     # Replace '0.0.0.0' with your Mac's actual IP address if you have firewall issues or
