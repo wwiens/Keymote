@@ -16,12 +16,11 @@ This project is licensed under the **Apache License 2.0**. You are free to use, 
   - **📡 Real-time Monitoring**: Automatically detects manual slide changes in Keynote.
   - **🔄 WebSocket Support**: Live updates with zero polling overhead.
   - **⏱️ Presentation Timer**: Built-in elapsed time tracking with custom slide timing.
-  - **📊 Slide Timing Management**: Automatic timing file creation, batch and per-slide updates, and real-time tracking.
-
-  - **📄 JSON Timing Format**: Robust timing files with metadata and migration support.
+  - **📊 Slide Timing Management**: Automatic timing file creation, per-slide updates, and real-time tracking.
+  - **📄 JSON Timing Format**: Robust timing files with metadata
   - **💫 Modern UI**: Beautiful, responsive interface with visual feedback.
-  - **🚀 Auto-sync**: Slide numbers update instantly when changed manually in Keynote.
-  - **🗂️ File Management**: Browse, open, and list recent Keynote/PowerPoint files via API.
+  - **🚀 Auto-sync**: Slide numbers update dynamically when changed manually in Keynote.
+  - **🗂️ File Management**: Browse, open, and list recent Keynote files via API.
 
 
 ## 🚀 Upgrade to Pro (Coming Soon!)
@@ -29,6 +28,7 @@ This project is licensed under the **Apache License 2.0**. You are free to use, 
 The **Pro version** of Keymote will be a native macOS and iPhone application, offering a seamless user experience and advanced features, including:
 
   - **🖥️📱 Native macOS and iPhone apps**
+  - **🪟 Windows & PowerPoint support**
   - **🤖 AI Slide Timing Analysis**
   - **🗂️ Section-based timing**
   - **🎯 Practice Mode**
