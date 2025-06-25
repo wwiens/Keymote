@@ -1,0 +1,47 @@
+[
+  {
+    "slide": 1,
+    "estimated_time_seconds": 30,
+    "cumulative_time_seconds": 30
+  },
+  {
+    "slide": 2,
+    "estimated_time_seconds": 30,
+    "cumulative_time_seconds": 60
+  },
+  {
+    "slide": 3,
+    "estimated_time_seconds": 20,
+    "cumulative_time_seconds": 80
+  },
+  {
+    "slide": 4,
+    "estimated_time_seconds": 10,
+    "cumulative_time_seconds": 90
+  },
+  {
+    "slide": 5,
+    "estimated_time_seconds": 10,
+    "cumulative_time_seconds": 100
+  },
+  {
+    "slide": 6,
+    "estimated_time_seconds": 10,
+    "cumulative_time_seconds": 110
+  },
+  {
+    "slide": 7,
+    "estimated_time_seconds": 180,
+    "cumulative_time_seconds": 290
+  },
+  {
+    "slide": 8,
+    "estimated_time_seconds": 210,
+    "cumulative_time_seconds": 500
+  },
+  {
+    "slide": 9,
+    "estimated_time_seconds": 900,
+    "cumulative_time_seconds": 1400
+  }
+]

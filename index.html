@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Keymote Controller</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+      <link rel="stylesheet" href="static/css/styles.css">
+      <!-- PWA Manifest -->
+      <link rel="manifest" href="static/manifest.json">
+      <!-- iOS Safari PWA Meta Tags -->
+      <meta name="apple-mobile-web-app-capable" content="yes">
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+      <meta name="apple-mobile-web-app-title" content="Keymote">
+      <meta name="theme-color" content="#FFD700">
+      <meta name="msapplication-TileColor" content="#1a1a1a">
+      <!-- iOS Safari PWA Icons -->
+      <link rel="apple-touch-icon" sizes="152x152" href="static/images/icon-152x152.png">
+      <link rel="apple-touch-icon" sizes="180x180" href="static/images/icon-180x180.png">
+      <link rel="apple-touch-icon" sizes="167x167" href="static/images/icon-167x167.png">
+      <!-- Favicon -->
+      <link rel="icon" type="image/png" sizes="32x32" href="static/images/icon-32x32.png">
+      <link rel="icon" type="image/png" sizes="16x16" href="static/images/icon-16x16.png">
+      <meta name="mobile-web-app-capable" content="yes">
+   </head>
+   <body>
+      <div class="container">
+         <!-- Header -->
+         <header class="header">
+            <div class="hamburger" id="hamburger-menu">
+               <span></span>
+               <span></span>
+               <span></span>
+            </div>
+            <div class="logo">
+               <img src="static/images/keymotelogo.png" alt="Keymote" />
+            </div>
+         </header>
+         <div class="dropdown-menu" id="dropdown-menu">
+            <div class="menu-item" id="open-presentation-menu">
+               <span class="menu-icon">📁</span>
+               <span class="menu-text">Open Presentation</span>
+            </div>
+            <div class="menu-item" id="stop-presentation-menu">
+               <span class="menu-icon">⏹️</span>
+               <span class="menu-text">Stop Presentation</span>
+            </div>
+            <div class="menu-item" id="close-presentation-menu">
+               <span class="menu-icon">❌</span>
+               <span class="menu-text">Close Presentation</span>
+            </div>
+         </div>
+         <div class="time-display" style="display:block;margin-bottom:60px;height:auto;margin-top:-15px;">
+            <div class="main-time-numbers">
+               <span id="main-time-hours" class="main-time-hours">0</span>
+               <span class="main-time-colon">:</span>
+               <span id="main-time-minutes" class="main-time-minutes">00</span>
+               <span class="main-time-colon">:</span>
+               <span id="main-time-seconds" class="main-time-seconds">00</span>
+            </div>
+            <div class="timer-below-info" style="display:flex;justify-content:center;gap:40px;margin-top:-10px">
+               <div class="time-info">
+                  <span class="label yellow">Total Time</span>
+                  <span class="value white" id="total-time-display">1:06:00</span>
+               </div>
+               <div class="time-info">
+                  <span class="label yellow">Slide</span>
+                  <span class="value white">
+                    <span id="slide-info-active">
+                        <span id="current-slide-number">1</span> of <span id="total-slide-number">57</span>
+                    </span>
+                    <span id="slide-info-inactive" style="display: none;">-</span>
+                  </span>
+               </div>
+               <div class="time-info">
+                  <span class="label yellow">Tracking</span>
+                  <span class="value white" id="tracking-display">-</span>
+               </div>
+            </div>
+         </div>
+         <!-- Control Buttons -->
+         <div class="controls">
+            <!--<button class="control-btn" id="start-btn" onclick="goToFirstSlide()">
+               <img src="static/images/start.svg" alt="First Slide" />
+               </button>-->
+            <button class="control-btn" id="previous-btn">
+            <img src="static/images/010-back-arrow.png" alt="Previous" />
+            </button>
+            <button class="control-btn" id="play-pause-btn">
+            <img src="static/images/008-play-button.png" alt="Play" id="play-pause-icon" />
+            </button>
+            <button class="control-btn" id="next-btn">
+            <img src="static/images/012-right-button-1.png" alt="Next" />
+            </button>
+            <!--<button class="control-btn" id="end-btn" onclick="goToLastSlide()">
+               <img src="static/images/end.svg" alt="Last Slide" />
+               </button>-->
+         </div>
+         <div class="slides-container" id="slides-container">
+         </div>
+      </div>
+
+      <!-- File Open Overlay -->
+      <div id="file-open-overlay" class="overlay-container" style="display: none;">
+         <div class="overlay-content">
+            <div class="file-browser-header">
+                <button id="file-browser-back-btn" class="overlay-btn browser-nav-btn">&larr;</button>
+                <h2 id="file-browser-path" class="file-browser-path-display">Open Presentation</h2>
+            </div>
+            <div id="file-list" class="file-list-container">
+               <!-- File items will be injected here -->
+            </div>
+            <div class="overlay-buttons">
+               <button id="cancel-file-open" class="overlay-btn">Cancel</button>
+               <button id="ok-file-open" class="overlay-btn" disabled>OK</button>
+            </div>
+         </div>
+      </div>
+
+      <!-- Loading Overlay -->
+      <div id="loading-overlay" class="overlay-container" style="display: none;">
+        <div class="overlay-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Opening Presentation...</p>
+        </div>
+      </div>
+
+      <!-- Time Edit Overlay -->
+      <div id="time-edit-overlay" class="overlay-container" style="display: none;">
+         <div class="overlay-content">
+            <h2>Edit Slide Time</h2>
+            <div class="time-editor-container">
+               <div class="time-picker">
+                  <div class="time-picker-label">Minutes</div>
+                  <div class="time-picker-controls">
+                     <button id="minutes-plus" class="time-btn">+</button>
+                     <span id="minutes-value" class="time-value">00</span>
+                     <button id="minutes-minus" class="time-btn">-</button>
+                  </div>
+               </div>
+               <div class="time-picker">
+                  <div class="time-picker-label">Seconds</div>
+                  <div class="time-picker-controls">
+                     <button id="seconds-plus" class="time-btn">+</button>
+                     <span id="seconds-value" class="time-value">00</span>
+                     <button id="seconds-minus" class="time-btn">-</button>
+                  </div>
+               </div>
+            </div>
+            <div class="overlay-buttons">
+               <button id="cancel-time-edit" class="overlay-btn">Cancel</button>
+               <button id="save-time-edit" class="overlay-btn">OK</button>
+            </div>
+         </div>
+      </div>
+
+   </body>
+   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+   <script src="static/js/main.js"></script>
+</html>
