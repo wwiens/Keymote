@@ -49,6 +49,7 @@ let activeSlideIndex = -1; // To track which slide is being edited
 let presentationsData = {};
 let slideTimings = [];
 let lastTrackingText = '0:00';
+let isPlayMode = false; // Track if presentation is in play mode
 
 // --- GLOBAL UTILITY FUNCTIONS ---
 function formatTime(secs) {
@@ -132,6 +133,12 @@ function updateSelectedSlideUI(slideNumber) {
     currentSlideIdx = idx;
     slides[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
     updateMainTimeDisplay(elapsedSeconds);
+    // Only start per-slide timer if in play mode
+    if (isPlayMode) {
+      startSlideTimer(idx);
+    } else {
+      stopSlideTimer();
+    }
 }
 
 function updatePresentationUI(data) {
@@ -165,14 +172,12 @@ function updatePresentationUI(data) {
                 if (slidesContainer) {
                     slidesContainer.innerHTML = '';
                     slideTimings.forEach((slide, idx) => {
-                        const planned = formatMmSs(slide.estimated_time_seconds);
                         const slideDiv = document.createElement('div');
                         slideDiv.className = 'slide-progress editable-slide';
                         slideDiv.id = `slide-${slide.slide}`;
                         slideDiv.style.cursor = 'pointer';
                         slideDiv.innerHTML = `
-                            <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span></span>
-                            <span class="progress-time editable-time"><span class="planned-time">${planned}</span></span>
+                            <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of ${formatMmSs(slide.estimated_time_seconds)}</span></span>
                             <button class="edit-icon">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                     <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -190,6 +195,7 @@ function updatePresentationUI(data) {
                 if (totalSlideNumberEl) totalSlideNumberEl.textContent = slideTimings.length;
 
                 updateSelectedSlideUI(api_data.slide_number);
+                updateSlideTimersUI();
 
             } else {
                 // No presentation is active.
@@ -211,14 +217,12 @@ function updateSlideListFromData(data) {
     if (slidesContainer) {
         slidesContainer.innerHTML = '';
         slideTimings.forEach((slide, idx) => {
-            const planned = formatMmSs(slide.estimated_time_seconds);
             const slideDiv = document.createElement('div');
             slideDiv.className = 'slide-progress editable-slide';
             slideDiv.id = `slide-${slide.slide}`;
             slideDiv.style.cursor = 'pointer';
             slideDiv.innerHTML = `
-                <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span></span>
-                <span class="progress-time editable-time"><span class="planned-time">${planned}</span></span>
+                <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of ${formatMmSs(slide.estimated_time_seconds)}</span></span>
                 <button class="edit-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -234,6 +238,7 @@ function updateSlideListFromData(data) {
         addSlideClickListeners();
     }
     if (totalSlideNumberEl) totalSlideNumberEl.textContent = slideTimings.length;
+    updateSlideTimersUI();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -322,18 +327,37 @@ document.addEventListener('DOMContentLoaded', function() {
     if (data.slide_number) {
         console.log('Received slide update:', data.slide_number);
         updateSelectedSlideUI(data.slide_number);
+        // Only start the slide timer if in play mode
+        if (isPlayMode) {
+          startSlideTimer(data.slide_number - 1);
+        } else {
+          stopSlideTimer();
+        }
     }
   });
 
   socket.on('presentation_closed', function() {
     console.log('Received presentation closed event.');
+    isPlayMode = false;
     resetAllTimersAndTracking('-');
     resetHeaderToNoPresentationState();
+    stopSlideTimer();
   });
 
   socket.on('presentation_stopped', function() {
     console.log('Received presentation stopped event.');
+    isPlayMode = false;
     resetHeaderForStoppedPresentation();
+    stopSlideTimer();
+  });
+
+  socket.on('presentation_started', function() {
+    console.log('Received presentation started event.');
+    isPlayMode = true;
+    // Start timers for the current slide
+    if (typeof currentSlideIdx === 'number' && currentSlideIdx >= 0) {
+      startSlideTimer(currentSlideIdx);
+    }
   });
 
   fetch('static/slide_timings.json')
@@ -354,6 +378,84 @@ document.addEventListener('DOMContentLoaded', function() {
 let timerInterval = null;
 let elapsedSeconds = 0;
 let timerRunning = false;
+
+// --- PER-SLIDE TIMER ---
+let slideElapsedSeconds = 0;
+let slideTimerInterval = null;
+let lastSlideIdx = null;
+
+function formatMmSs(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+function updateSlideTimersUI() {
+  // Update the label for each slide to show: Slide <number> <elapsed> of <planned>
+  const slides = slidesContainer ? slidesContainer.querySelectorAll('.slide-progress') : [];
+  slides.forEach((slide, idx) => {
+    let elapsed = '0:00';
+    if (idx === currentSlideIdx) {
+      elapsed = formatMmSs(slideElapsedSeconds);
+    } else if (slideTimings[idx].actual_time_seconds != null) {
+      elapsed = formatMmSs(slideTimings[idx].actual_time_seconds);
+    }
+    const planned = formatMmSs(slideTimings[idx].estimated_time_seconds);
+    let label = `Slide <span class=\"slide-number\">${slideTimings[idx].slide}</span> <span class=\"slide-elapsed\">${elapsed} of ${planned}</span>`;
+    slide.querySelector('.slide-label').innerHTML = label;
+  });
+}
+
+function saveSlideTimingsToBackend() {
+  if (!presentationsData || !presentationsData.current_presentation_id) return;
+  // Prepare data for saving
+  const dataToSave = JSON.parse(JSON.stringify(presentationsData));
+  const currentPresentationId = dataToSave.current_presentation_id;
+  // Update slides for the current presentation, removing cumulative_time_seconds
+  dataToSave.presentations[currentPresentationId].slides = slideTimings.map(({ cumulative_time_seconds, ...slide }) => slide);
+  fetch('/api/save_timings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dataToSave)
+  }).catch(err => console.error('Error saving timings:', err));
+}
+
+function startSlideTimer(idx) {
+  if (!isPlayMode) {
+    stopSlideTimer();
+    return;
+  }
+  // Stop previous timer if running
+  if (slideTimerInterval) {
+    clearInterval(slideTimerInterval);
+    slideTimerInterval = null;
+  }
+  // Save elapsed time for previous slide
+  if (lastSlideIdx !== null && lastSlideIdx !== idx && slideTimings[lastSlideIdx]) {
+    slideTimings[lastSlideIdx].actual_time_seconds = slideElapsedSeconds;
+    saveSlideTimingsToBackend();
+  }
+  // Restore elapsed for new slide if it exists, otherwise 0
+  slideElapsedSeconds = slideTimings[idx].actual_time_seconds || 0;
+  lastSlideIdx = idx;
+  updateSlideTimersUI();
+  slideTimerInterval = setInterval(() => {
+    slideElapsedSeconds++;
+    updateSlideTimersUI();
+  }, 1000);
+}
+
+function stopSlideTimer() {
+  if (slideTimerInterval) {
+    clearInterval(slideTimerInterval);
+    slideTimerInterval = null;
+  }
+  // Save elapsed time for last slide
+  if (lastSlideIdx !== null && slideTimings[lastSlideIdx]) {
+    slideTimings[lastSlideIdx].actual_time_seconds = slideElapsedSeconds;
+    saveSlideTimingsToBackend();
+  }
+}
 
 function updateMainTimeDisplay(secs) {
   const h = Math.floor(secs / 3600).toString();
@@ -528,12 +630,6 @@ function startTimer() {
 }
 
 // --- TIME EDIT OVERLAY FUNCTIONS ---
-
-function formatMmSs(secs) {
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-}
 
 function openTimeEditor(slideIndex) {
   activeSlideIndex = slideIndex;
