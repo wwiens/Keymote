@@ -787,7 +787,28 @@ body {
 }
 
 .planned-time, .elapsed-time {
-    font-weight: 400 !important;
+    display: inline;
+}
+
+/* Style for slide-elapsed and slide-planned to align right of slide number */
+.slide-label .slide-elapsed {
+    margin-left: 30px;
+    margin-right: 0;
+    letter-spacing: 1px;
+}
+
+/* Tighter spacing between 'of' and planned time */
+.slide-label .of-text {
+    margin-right: 2px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 400;
+}
+.slide-label .planned-time {
+    margin-left: 5;
+    color: #8e8e93;
+    font-size: 16px;
+    font-weight: 400;
 }
 
 /* Responsive adjustments */
@@ -1390,4 +1411,18 @@ body {
     width: 100px !important;
     height: 100px !important;
     filter: none;
+}
+
+/* Make all slide label text grey and regular font */
+.slide-label, .slide-label .slide-number, .slide-label .slide-elapsed {
+  color: #8e8e93;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+/* Remove extra margin from .slide-elapsed */
+.slide-label .slide-elapsed {
+  margin-left: 30px;
+  margin-right: 0;
+  letter-spacing: 1px;
 }

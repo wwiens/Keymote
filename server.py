@@ -81,6 +81,11 @@ def monitor_keynote_slides():
             print("Keynote presentation stopped.")
             socketio.emit('presentation_stopped')
 
+        # Check if presentation was started (entered play mode)
+        elif keynote_state["document_open"] and status["document_open"] and not keynote_state["is_playing"] and status["is_playing"]:
+            print("Keynote presentation started.")
+            socketio.emit('presentation_started')
+
         # Check for slide change
         elif status["document_open"] and status["slide_number"] != keynote_state["last_slide_number"]:
             print(f"Slide changed from {keynote_state['last_slide_number']} to {status['slide_number']}")
