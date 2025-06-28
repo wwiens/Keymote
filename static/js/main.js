@@ -505,7 +505,7 @@ let lastSlideIdx = null;
 function formatMmSs(secs) {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function addBreakAfterCurrentSlide() {
