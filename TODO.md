@@ -102,6 +102,9 @@
   - [ ] Rehearsal session management
   - [ ] Training mode interface
   - [ ] Progress tracking for improvement
+- [ ] **Save Slide Timing**: Save the elapsed time values when a presentation is done
+  - [ ] When user hits "Close Presentation" save the elapsed and target time values to a file for latert reference
+  
 
 
 ### 13. Content Sections
@@ -109,10 +112,6 @@
   - [ ] Add a new label in between slides that will act as a section maker
   - [ ] Any slides below that section marker will be indented
   - [ ] A section will have a timing summary of all slides within it
-
-
-
-## 🎨 Professional Features
 
 
 ## 14. Slide priority and time adjustments

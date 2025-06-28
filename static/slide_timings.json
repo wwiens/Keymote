@@ -1516,22 +1516,22 @@
         {
           "slide": 2,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": null
+          "actual_time_seconds": 5
         },
         {
           "slide": 3,
           "estimated_time_seconds": 600,
-          "actual_time_seconds": null
+          "actual_time_seconds": 2
         },
         {
           "slide": 4,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": null
+          "actual_time_seconds": 4
         },
         {
           "slide": 5,
           "estimated_time_seconds": 30,
-          "actual_time_seconds": null
+          "actual_time_seconds": 4
         },
         {
           "slide": 6,

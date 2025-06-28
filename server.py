@@ -3,6 +3,7 @@ import subprocess
 import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_socketio import SocketIO
+import datetime
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -319,7 +320,39 @@ def stop_presentation():
 @app.route('/api/close_presentation', methods=['POST'])
 def close_presentation():
     try:
-        # This AppleScript tells Keynote to close the front document.
+        # Save elapsed times before closing the presentation
+        elapsed_dir = os.path.join('static', 'elapsed_times')
+        os.makedirs(elapsed_dir, exist_ok=True)
+        
+        timings_path = os.path.join('static', 'slide_timings.json')
+        with open(timings_path, 'r') as f:
+            timings_data = json.load(f)
+        
+        current_presentation_id = timings_data.get('current_presentation_id')
+        presentations = timings_data.get('presentations', {})
+        presentation = presentations.get(current_presentation_id)
+        if presentation:
+            slides = presentation.get('slides', [])
+            # Prepare data for export
+            export_data = {
+                'presentation_id': current_presentation_id,
+                'presentation_name': presentation.get('name'),
+                'exported_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'slides': [
+                    {
+                        'slide': s.get('slide'),
+                        'estimated_time_seconds': s.get('estimated_time_seconds'),
+                        'actual_time_seconds': s.get('actual_time_seconds')
+                    } for s in slides
+                ]
+            }
+            # Build filename
+            base_name = os.path.splitext(os.path.basename(current_presentation_id))[0]
+            timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+            out_path = os.path.join(elapsed_dir, f'{base_name}_elapsed_{timestamp}.json')
+            with open(out_path, 'w') as outf:
+                json.dump(export_data, outf, indent=2)
+        # Now close the Keynote document
         script = 'tell application "Keynote" to close front document'
         subprocess.run(['osascript', '-e', script], check=True, capture_output=True, text=True)
         return jsonify({"status": "success", "message": "Presentation closed successfully."})
