@@ -1511,17 +1511,17 @@
         {
           "slide": 1,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 26
+          "actual_time_seconds": 50
         },
         {
           "slide": 2,
-          "estimated_time_seconds": 60,
-          "actual_time_seconds": 31
+          "estimated_time_seconds": 150,
+          "actual_time_seconds": 41
         },
         {
           "slide": 3,
           "estimated_time_seconds": 600,
-          "actual_time_seconds": 8
+          "actual_time_seconds": 11
         },
         {
           "slide": 4,
@@ -1560,7 +1560,7 @@
         },
         {
           "slide": 11,
-          "estimated_time_seconds": 60,
+          "estimated_time_seconds": 105,
           "actual_time_seconds": 10
         },
         {

@@ -34,17 +34,8 @@ const closePresentationMenu = document.getElementById('close-presentation-menu')
 let currentBrowserPath = '.';
 let selectedFilePath = null;
 
-// --- TIME EDIT OVERLAY ELEMENTS ---
-const timeEditOverlay = document.getElementById('time-edit-overlay');
-const minutesValueEl = document.getElementById('minutes-value');
-const secondsValueEl = document.getElementById('seconds-value');
-const minutesMinusBtn = document.getElementById('minutes-minus');
-const minutesPlusBtn = document.getElementById('minutes-plus');
-const secondsMinusBtn = document.getElementById('seconds-minus');
-const secondsPlusBtn = document.getElementById('seconds-plus');
-const saveTimeBtn = document.getElementById('save-time-edit');
-const cancelTimeBtn = document.getElementById('cancel-time-edit');
-let activeSlideIndex = -1; // To track which slide is being edited
+// --- INLINE TIME EDITING ---
+let editingSlideIndex = -1; // To track which slide is being edited
 
 let presentationsData = {};
 let slideTimings = [];
@@ -177,17 +168,21 @@ function updatePresentationUI(data) {
                         slideDiv.id = `slide-${slide.slide}`;
                         slideDiv.style.cursor = 'pointer';
                         slideDiv.innerHTML = `
-                            <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of ${formatMmSs(slide.estimated_time_seconds)}</span></span>
-                            <button class="edit-icon">
+                            <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
+                            <button class="edit-icon" data-slide-index="${idx}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                     <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                                 </svg>
                             </button>
                         `;
-                        slideDiv.querySelector('.edit-icon').addEventListener('click', (e) => {
+                        
+                        // Add event listener for the edit icon
+                        const editIcon = slideDiv.querySelector('.edit-icon');
+                        editIcon.addEventListener('click', (e) => {
                             e.stopPropagation();
-                            openTimeEditor(idx);
+                            startEditingTime(idx);
                         });
+                        
                         slidesContainer.appendChild(slideDiv);
                     });
                     addSlideClickListeners();
@@ -222,17 +217,21 @@ function updateSlideListFromData(data) {
             slideDiv.id = `slide-${slide.slide}`;
             slideDiv.style.cursor = 'pointer';
             slideDiv.innerHTML = `
-                <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of ${formatMmSs(slide.estimated_time_seconds)}</span></span>
-                <button class="edit-icon">
+                <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
+                <button class="edit-icon" data-slide-index="${idx}">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                     </svg>
                 </button>
             `;
-            slideDiv.querySelector('.edit-icon').addEventListener('click', (e) => {
+            
+            // Add event listener for the edit icon
+            const editIcon = slideDiv.querySelector('.edit-icon');
+            editIcon.addEventListener('click', (e) => {
                 e.stopPropagation();
-                openTimeEditor(idx);
+                startEditingTime(idx);
             });
+            
             slidesContainer.appendChild(slideDiv);
         });
         addSlideClickListeners();
@@ -391,7 +390,7 @@ function formatMmSs(secs) {
 }
 
 function updateSlideTimersUI() {
-  // Update the label for each slide to show: Slide <number> <elapsed> of <planned>
+  // Update the elapsed time for each slide while preserving the time values
   const slides = slidesContainer ? slidesContainer.querySelectorAll('.slide-progress') : [];
   slides.forEach((slide, idx) => {
     let elapsed = '0:00';
@@ -400,9 +399,27 @@ function updateSlideTimersUI() {
     } else if (slideTimings[idx].actual_time_seconds != null) {
       elapsed = formatMmSs(slideTimings[idx].actual_time_seconds);
     }
-    const planned = formatMmSs(slideTimings[idx].estimated_time_seconds);
-    let label = `Slide <span class=\"slide-number\">${slideTimings[idx].slide}</span> <span class=\"slide-elapsed\">${elapsed} of ${planned}</span>`;
-    slide.querySelector('.slide-label').innerHTML = label;
+    
+    // Update only the elapsed time part, preserving the time value or input field
+    const elapsedSpan = slide.querySelector('.slide-elapsed');
+    const timeValue = slide.querySelector('.time-value');
+    const timeInput = slide.querySelector('.time-input');
+    
+    if (elapsedSpan) {
+      if (timeInput) {
+        // Currently in edit mode - preserve input field
+        elapsedSpan.innerHTML = `${elapsed} of <input type="text" class="time-input" value="${timeInput.value}" data-slide-index="${idx}">`;
+        // Re-setup event listeners for the new input element
+        const newTimeInput = elapsedSpan.querySelector('.time-input');
+        if (newTimeInput) {
+          setupTimeInputListeners(newTimeInput, idx);
+        }
+      } else if (timeValue) {
+        // Normal mode - preserve time value span
+        const plannedTime = formatMmSs(slideTimings[idx].estimated_time_seconds);
+        elapsedSpan.innerHTML = `${elapsed} of <span class="time-value" data-slide-index="${idx}">${plannedTime}</span>`;
+      }
+    }
   });
 }
 
@@ -631,104 +648,181 @@ function startTimer() {
 
 // --- TIME EDIT OVERLAY FUNCTIONS ---
 
-function openTimeEditor(slideIndex) {
-  activeSlideIndex = slideIndex;
-  const currentSeconds = slideTimings[slideIndex].estimated_time_seconds || 0;
-  const minutes = Math.floor(currentSeconds / 60);
-  const seconds = currentSeconds % 60;
-
-  minutesValueEl.textContent = minutes.toString().padStart(2, '0');
-  secondsValueEl.textContent = seconds.toString().padStart(2, '0');
-
-  timeEditOverlay.style.display = 'flex';
-}
-
-function closeTimeEditor() {
-  timeEditOverlay.style.display = 'none';
-}
-
-function saveTime() {
-  const minutes = parseInt(minutesValueEl.textContent, 10);
-  const seconds = parseInt(secondsValueEl.textContent, 10);
-  const newTotalSeconds = minutes * 60 + seconds;
-
-  if (activeSlideIndex === -1 || isNaN(newTotalSeconds)) {
-    console.error("Invalid slide index or time value");
-    return;
-  }
+// Function to start editing a time value (triggered by edit icon)
+function startEditingTime(slideIndex) {
+  const slideElement = document.getElementById(`slide-${slideTimings[slideIndex].slide}`);
+  if (!slideElement) return;
   
-  // Update local slideTimings array
-  slideTimings[activeSlideIndex].estimated_time_seconds = newTotalSeconds;
+  const timeValue = slideElement.querySelector('.time-value');
+  const editIcon = slideElement.querySelector('.edit-icon');
+  
+  if (!timeValue || !editIcon) return;
+  
+  // Store the current value for potential rollback
+  const currentValue = timeValue.textContent;
+  
+  // Replace the time value span with an input field
+  const timeInput = document.createElement('input');
+  timeInput.type = 'text';
+  timeInput.className = 'time-input';
+  timeInput.value = currentValue;
+  timeInput.setAttribute('data-slide-index', slideIndex);
+  
+  // Replace the span with the input
+  timeValue.parentNode.replaceChild(timeInput, timeValue);
+  
+  // Hide the edit icon during editing
+  editIcon.style.display = 'none';
+  
+  // Set up event listeners for the input field
+  setupTimeInputListeners(timeInput, slideIndex, currentValue);
+  
+  // Focus and select the text
+  timeInput.focus();
+  timeInput.select();
+  
+  editingSlideIndex = slideIndex;
+}
 
-  // Recalculate cumulative times
-  let cumulativeTime = 0;
-  slideTimings = slideTimings.map(slide => {
-      cumulativeTime += slide.estimated_time_seconds || 0;
-      return { ...slide, cumulative_time_seconds: cumulativeTime };
+// Function to set up event listeners for time input fields
+function setupTimeInputListeners(timeInput, slideIndex, originalValue) {
+  // Prevent slide click when clicking on input
+  timeInput.addEventListener('click', (e) => {
+    e.stopPropagation();
   });
 
-  // Update total time display
-  totalPresentationSeconds = cumulativeTime;
-  const el = document.getElementById('total-time-display');
-  if (el) el.textContent = formatTime(totalPresentationSeconds);
-  
-  // Update the UI for the specific slide
-  const slideElement = document.getElementById(`slide-${slideTimings[activeSlideIndex].slide}`);
-  if (slideElement) {
-    const plannedTimeEl = slideElement.querySelector('.planned-time');
-    if (plannedTimeEl) {
-      plannedTimeEl.textContent = formatMmSs(newTotalSeconds);
+  // Handle Enter key - save and exit edit mode
+  timeInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      finishEditingTime(timeInput, slideIndex, true);
     }
-  }
+    
+    // Handle Escape key - cancel and revert changes
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      finishEditingTime(timeInput, slideIndex, false, originalValue);
+    }
+  });
 
-  // Prepare data for saving
-  const dataToSave = JSON.parse(JSON.stringify(presentationsData));
-  const currentPresentationId = dataToSave.current_presentation_id;
-  
-  // Update slides for the current presentation, removing cumulative_time_seconds
-  dataToSave.presentations[currentPresentationId].slides = slideTimings.map(({ cumulative_time_seconds, ...slide }) => slide);
+  // Handle blur - save changes when losing focus
+  timeInput.addEventListener('blur', (e) => {
+    finishEditingTime(timeInput, slideIndex, true);
+  });
 
-  // Persist changes to the server
-  fetch('/api/save_timings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(dataToSave)
-  }).catch(err => console.error('Error saving timings:', err));
-
-  closeTimeEditor();
+  // Allow only valid time characters
+  timeInput.addEventListener('input', (e) => {
+    // Remove any non-numeric characters except colon
+    let value = e.target.value.replace(/[^0-9:]/g, '');
+    
+    // Ensure proper format (M:SS or MM:SS)
+    if (value.length > 5) {
+      value = value.substring(0, 5);
+    }
+    
+    e.target.value = value;
+  });
 }
 
-// Event Listeners for Time Edit Overlay
-cancelTimeBtn.addEventListener('click', closeTimeEditor);
-saveTimeBtn.addEventListener('click', saveTime);
+// Function to finish editing and convert back to label
+function finishEditingTime(timeInput, slideIndex, shouldSave, fallbackValue = null) {
+  const slideElement = document.getElementById(`slide-${slideTimings[slideIndex].slide}`);
+  if (!slideElement) return;
+  
+  const editIcon = slideElement.querySelector('.edit-icon');
+  let finalValue = fallbackValue;
+  
+  if (shouldSave && !fallbackValue) {
+    const timeValue = timeInput.value.trim();
+    const newTotalSeconds = parseTimeInput(timeValue);
 
-minutesMinusBtn.addEventListener('click', () => {
-  let minutes = parseInt(minutesValueEl.textContent, 10);
-  if (minutes > 0) {
-    minutes--;
-    minutesValueEl.textContent = minutes.toString().padStart(2, '0');
+    if (newTotalSeconds !== null && !isNaN(newTotalSeconds)) {
+      // Valid input - save the changes
+      slideTimings[slideIndex].estimated_time_seconds = newTotalSeconds;
+
+      // Recalculate cumulative times
+      let cumulativeTime = 0;
+      slideTimings = slideTimings.map(slide => {
+          cumulativeTime += slide.estimated_time_seconds || 0;
+          return { ...slide, cumulative_time_seconds: cumulativeTime };
+      });
+
+      // Update total time display
+      const totalPresentationSeconds = cumulativeTime;
+      const el = document.getElementById('total-time-display');
+      if (el) el.textContent = formatTime(totalPresentationSeconds);
+      
+      finalValue = formatMmSs(newTotalSeconds);
+
+      // Prepare data for saving
+      const dataToSave = JSON.parse(JSON.stringify(presentationsData));
+      const currentPresentationId = dataToSave.current_presentation_id;
+      
+      // Update slides for the current presentation, removing cumulative_time_seconds
+      dataToSave.presentations[currentPresentationId].slides = slideTimings.map(({ cumulative_time_seconds, ...slide }) => slide);
+
+      // Persist changes to the server
+      fetch('/api/save_timings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSave)
+      }).catch(err => console.error('Error saving timings:', err));
+
+      // Add visual feedback
+      slideElement.classList.add('timing-updated');
+      setTimeout(() => {
+        slideElement.classList.remove('timing-updated');
+      }, 1000);
+    } else {
+      // Invalid input - revert to original value
+      finalValue = formatMmSs(slideTimings[slideIndex].estimated_time_seconds);
+    }
   }
-});
-
-minutesPlusBtn.addEventListener('click', () => {
-  let minutes = parseInt(minutesValueEl.textContent, 10);
-  if (minutes < 59) { // Cap at 59, can be changed
-    minutes++;
-    minutesValueEl.textContent = minutes.toString().padStart(2, '0');
+  
+  // Create new time value span
+  const timeValue = document.createElement('span');
+  timeValue.className = 'time-value';
+  timeValue.setAttribute('data-slide-index', slideIndex);
+  timeValue.textContent = finalValue;
+  
+  // Replace the input with the span
+  timeInput.parentNode.replaceChild(timeValue, timeInput);
+  
+  // Show the edit icon again
+  if (editIcon) {
+    editIcon.style.display = 'flex';
   }
-});
+  
+  editingSlideIndex = -1;
+}
 
-secondsMinusBtn.addEventListener('click', () => {
-  let seconds = parseInt(secondsValueEl.textContent, 10);
-  seconds = (seconds - 10 + 60) % 60;
-  secondsValueEl.textContent = seconds.toString().padStart(2, '0');
-});
+// Function to parse time input (supports formats like "1:30", "90", "2:00")
+function parseTimeInput(timeStr) {
+  if (!timeStr) return null;
+  
+  // If it contains a colon, parse as MM:SS
+  if (timeStr.includes(':')) {
+    const parts = timeStr.split(':');
+    if (parts.length === 2) {
+      const minutes = parseInt(parts[0], 10);
+      const seconds = parseInt(parts[1], 10);
+      
+      if (!isNaN(minutes) && !isNaN(seconds) && seconds < 60) {
+        return minutes * 60 + seconds;
+      }
+    }
+  } else {
+    // If no colon, treat as total seconds
+    const totalSeconds = parseInt(timeStr, 10);
+    if (!isNaN(totalSeconds) && totalSeconds >= 0) {
+      return totalSeconds;
+    }
+  }
+  
+  return null;
+}
 
-secondsPlusBtn.addEventListener('click', () => {
-  let seconds = parseInt(secondsValueEl.textContent, 10);
-  seconds = (seconds + 10) % 60;
-  secondsValueEl.textContent = seconds.toString().padStart(2, '0');
-});
+
 
 // --- FILE OPEN FUNCTIONALITY ---
 function browseDirectory(path) {

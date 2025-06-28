@@ -714,29 +714,46 @@ body {
     transform: translateY(-50%) scale(0.95);
 }
 
-/* Time input field for editing */
+/* Time input field for inline editing */
 .time-input {
-    background: #2c2c2e;
-    border: 1px solid #ffd60a;
-    border-radius: 6px;
-    color: white;
-    font-size: 18px;
-    padding: 4px 8px;
-    width: 60px;
+    background: transparent;
+    border: 1px solid rgba(255, 214, 10, 0.3);
+    border-radius: 4px;
+    color: #ffd60a;
+    font-size: 16px;
+    font-weight: 400;
+    padding: 2px 6px;
+    width: auto;
+    min-width: 45px;
     text-align: center;
     font-family: 'Montserrat', sans-serif;
     outline: none;
+    transition: all 0.2s ease;
+    display: inline-block;
+    margin-left: 2px;
+}
+
+.time-input:hover {
+    border-color: rgba(255, 214, 10, 0.6);
+    background: rgba(255, 214, 10, 0.05);
 }
 
 .time-input:focus {
-    border-color: #ffed4e;
+    border-color: #ffd60a;
+    background: rgba(255, 214, 10, 0.1);
     box-shadow: 0 0 0 2px rgba(255, 214, 10, 0.2);
 }
 
-/* Hide edit icon when editing */
-.editing .edit-icon {
-    display: none;
+/* Time value display when not editing */
+.time-value {
+    color: #8e8e93;
+    font-size: 16px;
+    font-weight: 400;
+    font-family: 'Montserrat', sans-serif;
+    cursor: default;
 }
+
+
 
 /* Success feedback animation */
 .timing-updated {
@@ -1123,156 +1140,7 @@ body {
     background: rgba(255, 214, 10, 0.1);
 }
 
-/* Time Edit Overlay */
-.overlay-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
-    z-index: 2000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 1;
-    visibility: visible;
-    transition: all 0.3s ease;
-}
 
-.overlay-container.hidden {
-    opacity: 0;
-    visibility: hidden;
-}
-
-.overlay-content {
-    background: #1e1e20;
-    border: 2px solid #ffd60a;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 400px;
-    padding: 24px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    transform: scale(1);
-    transition: transform 0.3s ease;
-}
-
-.overlay-container.hidden .overlay-content {
-    transform: scale(0.9);
-}
-
-.overlay-content h2 {
-    color: #ffd60a;
-    font-weight: 600;
-    font-family: 'Bebas Neue', sans-serif;
-    letter-spacing: 1px;
-    font-size: 32px;
-    margin-bottom: 25px;
-    text-align: center;
-}
-
-.time-editor-container {
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    margin-bottom: 30px;
-}
-
-.time-picker {
-    text-align: center;
-}
-
-.time-picker-label {
-    font-size: 16px;
-    font-weight: 500;
-    color: #aaa;
-    margin-bottom: 15px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.time-picker-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border-radius: 12px;
-    padding: 0;
-    box-shadow: none;
-}
-
-.time-btn {
-    background: #333;
-    color: #ffd60a;
-    border: none;
-    width: 80px;
-    height: 40px;
-    border-radius: 10px;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    line-height: 40px;
-}
-
-.time-btn:hover {
-    background: #444;
-}
-
-.time-btn:active {
-    background: #555;
-    transform: scale(0.95);
-}
-
-.time-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 48px;
-    color: white;
-    width: 80px;
-    text-align: center;
-    margin: 12px 0;
-}
-
-.overlay-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 30px;
-}
-
-.overlay-btn {
-    flex: 1;
-    padding: 15px;
-    border-radius: 12px;
-    border: none;
-    font-size: 18px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    font-family: 'Montserrat', sans-serif;
-    max-width: 180px;
-}
-
-#cancel-time-edit {
-    background: #2c2c2e;
-    color: white;
-}
-
-#cancel-time-edit:hover {
-    background: #3a3a3c;
-}
-
-#save-time-edit {
-    background: #ffd60a;
-    color: #111;
-}
-
-#save-time-edit:hover {
-    background-color: #ffc300;
-}
 
 .empty-state-message {
     text-align: center;
