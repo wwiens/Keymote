@@ -828,6 +828,35 @@ body {
     font-weight: 400;
 }
 
+/* Break slide styling */
+.break-slide {
+    background: linear-gradient(135deg, #8B4513, #A0522D) !important;
+    border: 2px solid #CD853F !important;
+}
+
+.break-slide:hover {
+    background: linear-gradient(135deg, #A0522D, #BC8A5F) !important;
+}
+
+.break-slide.slide-selected {
+    border: 2px solid #ffd60a !important;
+    box-shadow: 0 0 15px rgba(255, 214, 10, 0.3);
+}
+
+.break-label {
+    color: #F4A460 !important;
+    font-weight: 600 !important;
+    font-size: 20px !important;
+}
+
+.break-slide .slide-elapsed {
+    color: #DEB887 !important;
+}
+
+.break-slide .time-value {
+    color: #D2B48C !important;
+}
+
 /* Responsive adjustments */
 @media (max-width: 390px) {  
     body {

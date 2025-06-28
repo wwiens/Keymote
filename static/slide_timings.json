@@ -1566,22 +1566,27 @@
         {
           "slide": 12,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": null
+          "actual_time_seconds": 6
         },
         {
           "slide": 13,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": null
+          "actual_time_seconds": 2
+        },
+        {
+          "slide": "BREAK",
+          "estimated_time_seconds": 900,
+          "actual_time_seconds": 7
         },
         {
           "slide": 14,
           "estimated_time_seconds": 40,
-          "actual_time_seconds": null
+          "actual_time_seconds": 2
         },
         {
           "slide": 15,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": null
+          "actual_time_seconds": 0
         },
         {
           "slide": 16,

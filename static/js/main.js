@@ -22,6 +22,7 @@ const dropdownMenu = document.getElementById('dropdown-menu');
 
 // --- FILE OPEN OVERLAY ELEMENTS ---
 const openPresentationMenu = document.getElementById('open-presentation-menu');
+const addBreakMenu = document.getElementById('add-break-menu');
 const fileOpenOverlay = document.getElementById('file-open-overlay');
 const fileListContainer = document.getElementById('file-list');
 const cancelFileOpenBtn = document.getElementById('cancel-file-open');
@@ -60,15 +61,31 @@ function selectSlide(idx) {
   // Clamp idx
   idx = Math.max(0, Math.min(idx, slides.length - 1));
 
-  const slideNumber = idx + 1;
-  fetch(`/api/goto_slide/${slideNumber}`, { method: 'POST' })
-    .then(response => {
-      if (!response.ok) {
-        response.json().then(data => console.error(`Failed to go to slide ${slideNumber}:`, data.message));
-      }
-      // The websocket `slide_update` event will handle the UI update.
-    })
-    .catch(error => console.error(`Error calling goto_slide API for slide ${slideNumber}:`, error));
+  // Check if the selected slide is a break
+  if (slideTimings && slideTimings[idx] && slideTimings[idx].slide === 'BREAK') {
+    // For breaks, just update the UI selection without calling Keynote API
+    updateSelectedSlideByIndex(idx);
+    return;
+  }
+
+  // Calculate the actual Keynote slide number by counting non-break slides up to this index
+  let keynoteSlideNumber = 0;
+  for (let i = 0; i <= idx && i < slideTimings.length; i++) {
+    if (slideTimings[i].slide !== 'BREAK') {
+      keynoteSlideNumber++;
+    }
+  }
+
+  if (keynoteSlideNumber > 0) {
+    fetch(`/api/goto_slide/${keynoteSlideNumber}`, { method: 'POST' })
+      .then(response => {
+        if (!response.ok) {
+          response.json().then(data => console.error(`Failed to go to slide ${keynoteSlideNumber}:`, data.message));
+        }
+        // The websocket `slide_update` event will handle the UI update for regular slides
+      })
+      .catch(error => console.error(`Error calling goto_slide API for slide ${keynoteSlideNumber}:`, error));
+  }
 }
 
 function showActiveSlideDisplay() {
@@ -113,14 +130,48 @@ function resetHeaderToNoPresentationState() {
 function updateSelectedSlideUI(slideNumber) {
     if (!slideNumber) return;
 
-    const idx = slideNumber - 1;
+    // Map Keynote slide number to our internal index (accounting for breaks)
+    let keynoteSlideCount = 0;
+    let idx = -1;
+    
+    for (let i = 0; i < slideTimings.length; i++) {
+        if (slideTimings[i].slide !== 'BREAK') {
+            keynoteSlideCount++;
+            if (keynoteSlideCount === slideNumber) {
+                idx = i;
+                break;
+            }
+        }
+    }
+    
+    if (idx === -1) return; // Slide not found
+    
+    updateSelectedSlideByIndex(idx);
+}
+
+function updateSelectedSlideByIndex(idx) {
+    if (!slideTimings || idx < 0 || idx >= slideTimings.length) return;
 
     const slides = slidesContainer ? slidesContainer.querySelectorAll('.slide-progress') : [];
-    if (!slides.length || idx < 0 || idx >= slides.length) return;
+    if (!slides.length || idx >= slides.length) return;
 
     slides.forEach(slide => slide.classList.remove('slide-selected'));
     slides[idx].classList.add('slide-selected');
-    if (currentSlideNumberEl) currentSlideNumberEl.textContent = (idx + 1).toString();
+    
+    // Update display - show either slide number or "BREAK"
+    if (slideTimings[idx].slide === 'BREAK') {
+        if (currentSlideNumberEl) currentSlideNumberEl.textContent = 'BREAK';
+    } else {
+        // Calculate the display slide number for regular slides
+        let slideDisplayNumber = 0;
+        for (let i = 0; i <= idx; i++) {
+            if (slideTimings[i].slide !== 'BREAK') {
+                slideDisplayNumber++;
+            }
+        }
+        if (currentSlideNumberEl) currentSlideNumberEl.textContent = slideDisplayNumber.toString();
+    }
+    
     currentSlideIdx = idx;
     slides[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
     updateMainTimeDisplay(elapsedSeconds);
@@ -164,17 +215,30 @@ function updatePresentationUI(data) {
                     slidesContainer.innerHTML = '';
                     slideTimings.forEach((slide, idx) => {
                         const slideDiv = document.createElement('div');
-                        slideDiv.className = 'slide-progress editable-slide';
+                        slideDiv.className = slide.slide === 'BREAK' ? 'slide-progress editable-slide break-slide' : 'slide-progress editable-slide';
                         slideDiv.id = `slide-${slide.slide}`;
                         slideDiv.style.cursor = 'pointer';
-                        slideDiv.innerHTML = `
-                            <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
-                            <button class="edit-icon" data-slide-index="${idx}">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                    <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                                </svg>
-                            </button>
-                        `;
+                        
+                        // Different HTML for break vs regular slide
+                        if (slide.slide === 'BREAK') {
+                            slideDiv.innerHTML = `
+                                <span class="slide-label break-label">BREAK <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
+                                <button class="edit-icon" data-slide-index="${idx}">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                        <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    </svg>
+                                </button>
+                            `;
+                        } else {
+                            slideDiv.innerHTML = `
+                                <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
+                                <button class="edit-icon" data-slide-index="${idx}">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                        <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    </svg>
+                                </button>
+                            `;
+                        }
                         
                         // Add event listener for the edit icon
                         const editIcon = slideDiv.querySelector('.edit-icon');
@@ -213,17 +277,30 @@ function updateSlideListFromData(data) {
         slidesContainer.innerHTML = '';
         slideTimings.forEach((slide, idx) => {
             const slideDiv = document.createElement('div');
-            slideDiv.className = 'slide-progress editable-slide';
+            slideDiv.className = slide.slide === 'BREAK' ? 'slide-progress editable-slide break-slide' : 'slide-progress editable-slide';
             slideDiv.id = `slide-${slide.slide}`;
             slideDiv.style.cursor = 'pointer';
-            slideDiv.innerHTML = `
-                <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
-                <button class="edit-icon" data-slide-index="${idx}">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                    </svg>
-                </button>
-            `;
+            
+            // Different HTML for break vs regular slide
+            if (slide.slide === 'BREAK') {
+                slideDiv.innerHTML = `
+                    <span class="slide-label break-label">BREAK <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
+                    <button class="edit-icon" data-slide-index="${idx}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </button>
+                `;
+            } else {
+                slideDiv.innerHTML = `
+                    <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
+                    <button class="edit-icon" data-slide-index="${idx}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </button>
+                `;
+            }
             
             // Add event listener for the edit icon
             const editIcon = slideDiv.querySelector('.edit-icon');
@@ -261,6 +338,14 @@ document.addEventListener('DOMContentLoaded', function() {
   if (openPresentationMenu) {
     openPresentationMenu.addEventListener('click', () => {
       openFileOpenOverlay();
+      if (dropdownMenu) dropdownMenu.classList.remove('show');
+      if (hamburgerMenu) hamburgerMenu.classList.remove('active');
+    });
+  }
+
+  if (addBreakMenu) {
+    addBreakMenu.addEventListener('click', () => {
+      addBreakAfterCurrentSlide();
       if (dropdownMenu) dropdownMenu.classList.remove('show');
       if (hamburgerMenu) hamburgerMenu.classList.remove('active');
     });
@@ -387,6 +472,76 @@ function formatMmSs(secs) {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+function addBreakAfterCurrentSlide() {
+  // Check if a presentation is loaded
+  if (!presentationsData || !presentationsData.current_presentation_id || !slideTimings || slideTimings.length === 0) {
+    alert('Please open a presentation first before adding a break.');
+    return;
+  }
+
+  // Create a new break entry
+  const breakEntry = {
+    slide: 'BREAK',
+    estimated_time_seconds: 900, // 15 minutes
+    actual_time_seconds: null
+  };
+
+  // Insert the break after the current slide (or at the end if no slide is selected)
+  const insertIndex = (typeof currentSlideIdx === 'number' && currentSlideIdx >= 0) 
+    ? currentSlideIdx + 1 
+    : slideTimings.length;
+  slideTimings.splice(insertIndex, 0, breakEntry);
+
+  // Recalculate cumulative times
+  let cumulativeTime = 0;
+  slideTimings = slideTimings.map(slide => {
+    cumulativeTime += slide.estimated_time_seconds || 0;
+    return { ...slide, cumulative_time_seconds: cumulativeTime };
+  });
+
+  // Update total time display
+  const totalPresentationSeconds = cumulativeTime;
+  const el = document.getElementById('total-time-display');
+  if (el) el.textContent = formatTime(totalPresentationSeconds);
+
+  // Update the presentation data structure
+  const dataToSave = JSON.parse(JSON.stringify(presentationsData));
+  const currentPresentationId = dataToSave.current_presentation_id;
+  dataToSave.presentations[currentPresentationId].slides = slideTimings.map(({ cumulative_time_seconds, ...slide }) => slide);
+
+  // Save to backend
+  fetch('/api/save_timings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dataToSave)
+  })
+  .then(response => {
+    if (response.ok) {
+      console.log('Break added and saved successfully');
+      // Update the global presentationsData
+      presentationsData = dataToSave;
+      // Refresh the slides UI
+      updatePresentationUI(dataToSave);
+      // Re-select the original slide (which is still at the same index)
+      setTimeout(() => {
+        updateSelectedSlideUI(currentSlideIdx + 1);
+        // Scroll to show the new break that was added
+        const slides = slidesContainer ? slidesContainer.querySelectorAll('.slide-progress') : [];
+        if (slides[insertIndex]) {
+          slides[insertIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    } else {
+      console.error('Failed to save break to backend');
+      alert('Failed to save the break. Please try again.');
+    }
+  })
+  .catch(err => {
+    console.error('Error saving break:', err);
+    alert('Error saving the break. Please try again.');
+  });
 }
 
 function updateSlideTimersUI() {
@@ -549,30 +704,81 @@ if (playPauseBtn) {
   });
 }
 
-// --- Patch next/previous button logic ---
+// --- Smart next/previous button logic that handles breaks ---
 if (nextBtn) {
   nextBtn.addEventListener('click', function() {
-    fetch('/api/next_slide', { method: 'POST' })
-      .then(response => {
-        if (!response.ok) {
-          response.json().then(data => console.error('Failed to move to next slide:', data.message));
-        }
-        // UI will be updated by the websocket event
-      })
-      .catch(error => console.error('Error calling next_slide API:', error));
+    navigateToNextSlide();
   });
 }
 if (previousBtn) {
   previousBtn.addEventListener('click', function() {
-    fetch('/api/previous_slide', { method: 'POST' })
-      .then(response => {
-        if (!response.ok) {
-          response.json().then(data => console.error('Failed to move to previous slide:', data.message));
-        }
-        // UI will be updated by the websocket event
-      })
-      .catch(error => console.error('Error calling previous_slide API:', error));
+    navigateToPreviousSlide();
   });
+}
+
+function navigateToNextSlide() {
+  if (!slideTimings || slideTimings.length === 0) return;
+  
+  const nextIndex = currentSlideIdx + 1;
+  if (nextIndex >= slideTimings.length) return; // Already at last slide
+  
+  const nextSlide = slideTimings[nextIndex];
+  
+  if (nextSlide.slide === 'BREAK') {
+    // Next item is a break - just update UI selection
+    updateSelectedSlideByIndex(nextIndex);
+  } else {
+    // Next item is a regular slide - calculate Keynote slide number and call API
+    const keynoteSlideNumber = calculateKeynoteSlideNumber(nextIndex);
+    if (keynoteSlideNumber > 0) {
+      fetch(`/api/goto_slide/${keynoteSlideNumber}`, { method: 'POST' })
+        .then(response => {
+          if (!response.ok) {
+            response.json().then(data => console.error('Failed to move to next slide:', data.message));
+          }
+          // UI will be updated by the websocket event for regular slides
+        })
+        .catch(error => console.error('Error calling goto_slide API:', error));
+    }
+  }
+}
+
+function navigateToPreviousSlide() {
+  if (!slideTimings || slideTimings.length === 0) return;
+  
+  const prevIndex = currentSlideIdx - 1;
+  if (prevIndex < 0) return; // Already at first slide
+  
+  const prevSlide = slideTimings[prevIndex];
+  
+  if (prevSlide.slide === 'BREAK') {
+    // Previous item is a break - just update UI selection
+    updateSelectedSlideByIndex(prevIndex);
+  } else {
+    // Previous item is a regular slide - calculate Keynote slide number and call API
+    const keynoteSlideNumber = calculateKeynoteSlideNumber(prevIndex);
+    if (keynoteSlideNumber > 0) {
+      fetch(`/api/goto_slide/${keynoteSlideNumber}`, { method: 'POST' })
+        .then(response => {
+          if (!response.ok) {
+            response.json().then(data => console.error('Failed to move to previous slide:', data.message));
+          }
+          // UI will be updated by the websocket event for regular slides
+        })
+        .catch(error => console.error('Error calling goto_slide API:', error));
+    }
+  }
+}
+
+function calculateKeynoteSlideNumber(slideIndex) {
+  // Calculate the actual Keynote slide number by counting non-break slides up to this index
+  let keynoteSlideNumber = 0;
+  for (let i = 0; i <= slideIndex && i < slideTimings.length; i++) {
+    if (slideTimings[i].slide !== 'BREAK') {
+      keynoteSlideNumber++;
+    }
+  }
+  return keynoteSlideNumber;
 }
 
 // --- Patch slide click listeners ---
