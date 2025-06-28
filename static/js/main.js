@@ -890,6 +890,59 @@ function closeFileOpenOverlay() {
   }
 }
 
+// Function to reset all slide elapsed times when opening a new presentation
+function resetSlideElapsedTimes(timingsData) {
+  if (!timingsData || !timingsData.presentations || !timingsData.current_presentation_id) {
+    console.log('No valid presentation data to reset timings for');
+    return;
+  }
+  
+  const currentPresentationId = timingsData.current_presentation_id;
+  const currentPresentation = timingsData.presentations[currentPresentationId];
+  
+  if (!currentPresentation || !currentPresentation.slides) {
+    console.log('No slides found in current presentation');
+    return;
+  }
+  
+  console.log('Resetting elapsed times for all slides in presentation:', currentPresentationId);
+  
+  // Reset actual_time_seconds to null for all slides
+  currentPresentation.slides.forEach(slide => {
+    slide.actual_time_seconds = null;
+  });
+  
+  // Reset current slide timing state
+  slideElapsedSeconds = 0;
+  lastSlideIdx = null;
+  
+  // Stop any running slide timer
+  if (slideTimerInterval) {
+    clearInterval(slideTimerInterval);
+    slideTimerInterval = null;
+  }
+  
+  // Update the global presentationsData
+  presentationsData = timingsData;
+  
+  // Save the reset data to the backend
+  fetch('/api/save_timings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(timingsData)
+  })
+  .then(response => {
+    if (response.ok) {
+      console.log('Successfully reset slide elapsed times');
+    } else {
+      console.error('Failed to save reset slide timings');
+    }
+  })
+  .catch(err => {
+    console.error('Error saving reset slide timings:', err);
+  });
+}
+
 function openPresentation(filename) {
   closeFileOpenOverlay();
   loadingOverlay.style.display = 'flex';
@@ -908,6 +961,8 @@ function openPresentation(filename) {
           fetch('static/slide_timings.json?t=' + new Date().getTime()) // Cache-bust
             .then(response => response.json())
             .then(timingsData => {
+              // Reset elapsed times for all slides when opening a new presentation
+              resetSlideElapsedTimes(timingsData);
               updatePresentationUI(timingsData);
               // Highlight the correct slide after UI is built
               setTimeout(() => {
@@ -919,7 +974,11 @@ function openPresentation(filename) {
           // Fallback: just update UI as before
           fetch('static/slide_timings.json?t=' + new Date().getTime())
             .then(response => response.json())
-            .then(updatePresentationUI)
+            .then(timingsData => {
+              // Reset elapsed times for all slides when opening a new presentation
+              resetSlideElapsedTimes(timingsData);
+              updatePresentationUI(timingsData);
+            })
             .catch(err => console.error('Failed to reload slide timings:', err));
         }
       } else {

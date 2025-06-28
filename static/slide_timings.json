@@ -1511,32 +1511,32 @@
         {
           "slide": 1,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 53
+          "actual_time_seconds": null
         },
         {
           "slide": 2,
           "estimated_time_seconds": 150,
-          "actual_time_seconds": 44
+          "actual_time_seconds": null
         },
         {
           "slide": 3,
           "estimated_time_seconds": 600,
-          "actual_time_seconds": 14
+          "actual_time_seconds": null
         },
         {
           "slide": 4,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 1
+          "actual_time_seconds": null
         },
         {
           "slide": 5,
           "estimated_time_seconds": 30,
-          "actual_time_seconds": 6
+          "actual_time_seconds": null
         },
         {
           "slide": 6,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 13
+          "actual_time_seconds": null
         },
         {
           "slide": 7,
@@ -1551,32 +1551,32 @@
         {
           "slide": 9,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 7
+          "actual_time_seconds": null
         },
         {
           "slide": 10,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 7
+          "actual_time_seconds": null
         },
         {
           "slide": 11,
           "estimated_time_seconds": 105,
-          "actual_time_seconds": 10
+          "actual_time_seconds": null
         },
         {
           "slide": 12,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 13
+          "actual_time_seconds": null
         },
         {
           "slide": 13,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 2
+          "actual_time_seconds": null
         },
         {
           "slide": 14,
           "estimated_time_seconds": 40,
-          "actual_time_seconds": 28
+          "actual_time_seconds": null
         },
         {
           "slide": 15,
@@ -1831,7 +1831,7 @@
         {
           "slide": 65,
           "estimated_time_seconds": 1500,
-          "actual_time_seconds": 3
+          "actual_time_seconds": null
         },
         {
           "slide": 66,
