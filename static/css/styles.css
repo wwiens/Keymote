@@ -763,8 +763,8 @@ body {
     font-size: 16px;
     font-weight: 400;
     padding: 2px 6px;
-    width: 50px;
-    max-width: 50px;
+    width: 60px;
+    max-width: 60px;
     text-align: center;
     font-family: 'Montserrat', sans-serif;
     outline: none;
@@ -1101,8 +1101,8 @@ body {
 
     .time-input {
         font-size: 16px;
-        width: 45px;
-        max-width: 45px;
+        width: 54px;
+        max-width: 54px;
         padding: 3px 6px;
     }
 
