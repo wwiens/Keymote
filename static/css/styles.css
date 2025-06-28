@@ -1140,6 +1140,88 @@ body {
     background: rgba(255, 214, 10, 0.1);
 }
 
+/* Overlay styles for file open dialog and loading screen */
+.overlay-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    visibility: visible;
+    transition: all 0.3s ease;
+}
+
+.overlay-container.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.overlay-content {
+    background: #1e1e20;
+    border: 2px solid #ffd60a;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    transform: scale(1);
+    transition: transform 0.3s ease;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.overlay-container.hidden .overlay-content {
+    transform: scale(0.9);
+}
+
+.overlay-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.overlay-btn {
+    flex: 1;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    max-width: 180px;
+    background: #2c2c2e;
+    color: white;
+}
+
+.overlay-btn:hover {
+    background: #3a3a3c;
+}
+
+.overlay-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#ok-file-open {
+    background: #ffd60a;
+    color: #111;
+}
+
+#ok-file-open:hover:not(:disabled) {
+    background-color: #ffc300;
+}
+
 
 
 .empty-state-message {

@@ -1511,32 +1511,32 @@
         {
           "slide": 1,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 50
+          "actual_time_seconds": 53
         },
         {
           "slide": 2,
           "estimated_time_seconds": 150,
-          "actual_time_seconds": 41
+          "actual_time_seconds": 44
         },
         {
           "slide": 3,
           "estimated_time_seconds": 600,
-          "actual_time_seconds": 11
+          "actual_time_seconds": 14
         },
         {
           "slide": 4,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": null
+          "actual_time_seconds": 1
         },
         {
           "slide": 5,
           "estimated_time_seconds": 30,
-          "actual_time_seconds": null
+          "actual_time_seconds": 6
         },
         {
           "slide": 6,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": null
+          "actual_time_seconds": 13
         },
         {
           "slide": 7,
