@@ -213,6 +213,7 @@ function updatePresentationUI(data) {
 
                 if (slidesContainer) {
                     slidesContainer.innerHTML = '';
+                    clearStuckEditingStates(); // Clear any stuck editing states
                     slideTimings.forEach((slide, idx) => {
                         const slideDiv = document.createElement('div');
                         slideDiv.className = slide.slide === 'BREAK' ? 'slide-progress editable-slide break-slide' : 'slide-progress editable-slide';
@@ -223,16 +224,23 @@ function updatePresentationUI(data) {
                         if (slide.slide === 'BREAK') {
                             slideDiv.innerHTML = `
                                 <span class="slide-label break-label">BREAK <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
-                                <button class="edit-icon" data-slide-index="${idx}">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                                    </svg>
-                                </button>
+                                <div class="slide-controls">
+                                    <button class="edit-icon" data-slide-index="${idx}" title="Edit break duration">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                            <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                        </svg>
+                                    </button>
+                                    <button class="delete-icon" data-slide-index="${idx}" title="Delete break">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                        </svg>
+                                    </button>
+                                </div>
                             `;
                         } else {
                             slideDiv.innerHTML = `
                                 <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
-                                <button class="edit-icon" data-slide-index="${idx}">
+                                <button class="edit-icon" data-slide-index="${idx}" title="Edit slide duration">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                         <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                                     </svg>
@@ -246,6 +254,15 @@ function updatePresentationUI(data) {
                             e.stopPropagation();
                             startEditingTime(idx);
                         });
+                        
+                        // Add event listener for the delete icon (only for break slides)
+                        const deleteIcon = slideDiv.querySelector('.delete-icon');
+                        if (deleteIcon) {
+                            deleteIcon.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                deleteBreakSlide(idx);
+                            });
+                        }
                         
                         slidesContainer.appendChild(slideDiv);
                     });
@@ -275,6 +292,7 @@ function updateSlideListFromData(data) {
 
     if (slidesContainer) {
         slidesContainer.innerHTML = '';
+        clearStuckEditingStates(); // Clear any stuck editing states
         slideTimings.forEach((slide, idx) => {
             const slideDiv = document.createElement('div');
             slideDiv.className = slide.slide === 'BREAK' ? 'slide-progress editable-slide break-slide' : 'slide-progress editable-slide';
@@ -285,16 +303,23 @@ function updateSlideListFromData(data) {
             if (slide.slide === 'BREAK') {
                 slideDiv.innerHTML = `
                     <span class="slide-label break-label">BREAK <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
-                    <button class="edit-icon" data-slide-index="${idx}">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                        </svg>
-                    </button>
+                    <div class="slide-controls">
+                        <button class="edit-icon" data-slide-index="${idx}" title="Edit break duration">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </button>
+                        <button class="delete-icon" data-slide-index="${idx}" title="Delete break">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </button>
+                    </div>
                 `;
             } else {
                 slideDiv.innerHTML = `
                     <span class="slide-label">Slide <span class="slide-number">${slide.slide}</span> <span class="slide-elapsed">0:00 of <span class="time-value" data-slide-index="${idx}">${formatMmSs(slide.estimated_time_seconds)}</span></span></span>
-                    <button class="edit-icon" data-slide-index="${idx}">
+                    <button class="edit-icon" data-slide-index="${idx}" title="Edit slide duration">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                             <path d="M11 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H16C17.1046 20 18 19.1046 18 18V11M18.5 2.5C19.3284 1.67157 20.6716 1.67157 21.5 2.5C22.3284 3.32843 22.3284 4.67157 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                         </svg>
@@ -308,6 +333,15 @@ function updateSlideListFromData(data) {
                 e.stopPropagation();
                 startEditingTime(idx);
             });
+            
+            // Add event listener for the delete icon (only for break slides)
+            const deleteIcon = slideDiv.querySelector('.delete-icon');
+            if (deleteIcon) {
+                deleteIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteBreakSlide(idx);
+                });
+            }
             
             slidesContainer.appendChild(slideDiv);
         });
@@ -522,6 +556,8 @@ function addBreakAfterCurrentSlide() {
       console.log('Break added and saved successfully');
       // Update the global presentationsData
       presentationsData = dataToSave;
+      // Clear any stuck editing states before refreshing UI
+      clearStuckEditingStates();
       // Refresh the slides UI
       updatePresentationUI(dataToSave);
       // Re-select the original slide (which is still at the same index)
@@ -789,6 +825,25 @@ function addSlideClickListeners() {
   });
 }
 
+function clearStuckEditingStates() {
+  // Clear any stuck editing states that might cause freezing
+  editingSlideIndex = -1;
+  
+  // Find any lingering time-input elements and reset their flags
+  const stuckInputs = document.querySelectorAll('.time-input');
+  stuckInputs.forEach(input => {
+    if (input.dataset) {
+      input.dataset.isFinishing = 'false';
+    }
+  });
+  
+  // Make sure all edit icons are visible
+  const editIcons = document.querySelectorAll('.edit-icon');
+  editIcons.forEach(icon => {
+    icon.style.display = 'flex';
+  });
+}
+
 // --- After slides are loaded, store timings and patch select ---
 function trySelectFirstSlide() {
   const slides = slidesContainer ? slidesContainer.querySelectorAll('.slide-progress') : [];
@@ -913,7 +968,13 @@ function setupTimeInputListeners(timeInput, slideIndex, originalValue) {
 
   // Handle blur - save changes when losing focus
   timeInput.addEventListener('blur', (e) => {
-    finishEditingTime(timeInput, slideIndex, true);
+    // Add a small delay to allow other handlers (like Enter keydown) to complete first
+    setTimeout(() => {
+      // Only proceed if the input is still in the DOM and not already finishing
+      if (timeInput && timeInput.parentNode && timeInput.dataset.isFinishing !== 'true') {
+        finishEditingTime(timeInput, slideIndex, true);
+      }
+    }, 0);
   });
 
   // Allow only valid time characters
@@ -932,6 +993,21 @@ function setupTimeInputListeners(timeInput, slideIndex, originalValue) {
 
 // Function to finish editing and convert back to label
 function finishEditingTime(timeInput, slideIndex, shouldSave, fallbackValue = null) {
+  // Prevent multiple calls to finishEditingTime for the same editing session
+  if (!timeInput || !timeInput.parentNode || timeInput.dataset.isFinishing === 'true') {
+    return;
+  }
+  
+  // Mark as finishing to prevent race conditions
+  timeInput.dataset.isFinishing = 'true';
+  
+  // Clear the flag after a timeout to prevent permanent freezing
+  setTimeout(() => {
+    if (timeInput && timeInput.dataset) {
+      timeInput.dataset.isFinishing = 'false';
+    }
+  }, 100);
+  
   const slideElement = document.getElementById(`slide-${slideTimings[slideIndex].slide}`);
   if (!slideElement) return;
   
@@ -991,15 +1067,42 @@ function finishEditingTime(timeInput, slideIndex, shouldSave, fallbackValue = nu
   timeValue.setAttribute('data-slide-index', slideIndex);
   timeValue.textContent = finalValue;
   
-  // Replace the input with the span
-  timeInput.parentNode.replaceChild(timeValue, timeInput);
+  // Replace the input with the span - with additional safety check
+  let replacementSuccessful = false;
+  try {
+    if (timeInput.parentNode && timeInput.parentNode.contains(timeInput)) {
+      timeInput.parentNode.replaceChild(timeValue, timeInput);
+      replacementSuccessful = true;
+    }
+  } catch (error) {
+    console.error('Error replacing time input element:', error);
+    // Fallback: try to find and replace by selector
+    const parentContainer = slideElement.querySelector('.slide-elapsed');
+    if (parentContainer) {
+      const existingInput = parentContainer.querySelector('.time-input');
+      if (existingInput) {
+        try {
+          existingInput.parentNode.replaceChild(timeValue, existingInput);
+          replacementSuccessful = true;
+        } catch (fallbackError) {
+          console.error('Fallback replacement also failed:', fallbackError);
+        }
+      }
+    }
+  }
   
   // Show the edit icon again
   if (editIcon) {
     editIcon.style.display = 'flex';
   }
   
+  // Always reset editing state, even if replacement failed
   editingSlideIndex = -1;
+  
+  // Clear the finishing flag on the input element if it still exists
+  if (timeInput && timeInput.dataset) {
+    timeInput.dataset.isFinishing = 'false';
+  }
 }
 
 // Function to parse time input (supports formats like "1:30", "90", "2:00")
@@ -1208,4 +1311,65 @@ function stopTimerAndResetButton() {
     timerRunning = false;
     if (playPauseIcon) playPauseIcon.src = 'static/images/008-play-button.png';
     // Exit presentation mode UI if needed
+}
+
+function deleteBreakSlide(slideIndex) {
+  // Check if a presentation is loaded
+  if (!presentationsData || !presentationsData.current_presentation_id || !slideTimings || slideTimings.length === 0) {
+    console.log('No valid presentation data to delete slide from');
+    return;
+  }
+  
+  // Check if the slide to be deleted is a break
+  if (slideTimings[slideIndex].slide !== 'BREAK') {
+    console.log('Selected slide is not a break');
+    return;
+  }
+  
+  console.log('Deleting slide:', slideTimings[slideIndex]);
+  
+  // Remove the break from the slide timings
+  slideTimings.splice(slideIndex, 1);
+  
+  // Recalculate cumulative times
+  let cumulativeTime = 0;
+  slideTimings = slideTimings.map(slide => {
+    cumulativeTime += slide.estimated_time_seconds || 0;
+    return { ...slide, cumulative_time_seconds: cumulativeTime };
+  });
+  
+  // Update total time display
+  const totalPresentationSeconds = cumulativeTime;
+  const el = document.getElementById('total-time-display');
+  if (el) el.textContent = formatTime(totalPresentationSeconds);
+  
+  // Update the presentation data structure
+  const dataToSave = JSON.parse(JSON.stringify(presentationsData));
+  const currentPresentationId = dataToSave.current_presentation_id;
+  dataToSave.presentations[currentPresentationId].slides = slideTimings.map(({ cumulative_time_seconds, ...slide }) => slide);
+  
+  // Save to backend
+  fetch('/api/save_timings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dataToSave)
+  })
+  .then(response => {
+    if (response.ok) {
+      console.log('Slide deleted and saved successfully');
+      // Update the global presentationsData
+      presentationsData = dataToSave;
+      // Clear any stuck editing states before refreshing UI
+      clearStuckEditingStates();
+      // Refresh the slides UI
+      updatePresentationUI(dataToSave);
+    } else {
+      console.error('Failed to delete slide from backend');
+      alert('Failed to delete the slide. Please try again.');
+    }
+  })
+  .catch(err => {
+    console.error('Error deleting slide:', err);
+    alert('Error deleting the slide. Please try again.');
+  });
 } 

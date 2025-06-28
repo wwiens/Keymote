@@ -685,24 +685,31 @@ body {
     /* Remove margin-right to align with other slides */
 }
 
+/* Slide controls container for multiple action buttons */
+.slide-controls {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 /* Edit icon styling */
 .edit-icon {
     background: transparent;
     border: none;
     color: #8e8e93;
     cursor: pointer;
-    padding: 10px;
+    padding: 8px;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    min-width: 40px;
-    height: 40px;
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
+    min-width: 36px;
+    height: 36px;
 }
 
 .edit-icon:hover {
@@ -711,7 +718,40 @@ body {
 }
 
 .edit-icon:active {
-    transform: translateY(-50%) scale(0.95);
+    transform: scale(0.95);
+}
+
+/* Delete icon styling for break slides */
+.delete-icon {
+    background: transparent;
+    border: none;
+    color: #8e8e93;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    min-width: 36px;
+    height: 36px;
+}
+
+.delete-icon:hover {
+    background: rgba(234, 67, 53, 0.2);
+    color: #ea4335;
+}
+
+.delete-icon:active {
+    transform: scale(0.95);
+}
+
+/* For slides that don't use the slide-controls container (single edit icon) */
+.slide-progress .edit-icon:not(.slide-controls .edit-icon) {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 /* Time input field for inline editing */
@@ -1039,14 +1079,24 @@ body {
 
     /* Edit functionality responsive adjustments */
     .editable-slide {
-        padding-right: 55px; /* Adjust padding for mobile */
+        padding-right: 80px; /* Adjust padding for mobile to accommodate multiple buttons */
+    }
+
+    .slide-controls {
+        right: 12px; /* Adjust position for mobile */
+        gap: 6px; /* Reduce gap for mobile */
     }
 
     .edit-icon {
-        min-width: 36px;
-        height: 36px;
-        padding: 8px;
-        right: 12px; /* Adjust position for mobile */
+        min-width: 32px;
+        height: 32px;
+        padding: 6px;
+    }
+
+    .delete-icon {
+        min-width: 32px;
+        height: 32px;
+        padding: 6px;
     }
 
     .time-input {

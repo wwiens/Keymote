@@ -13,8 +13,8 @@
   - [ ] Image/media content consideration
   - [ ] Slide complexity scoring
 - [ ] **Presentation Breaks**: Add a Break slide in between 2 existing slides
-  - [ ] Add a Break "slide" that is not an actual slide 
-  - [ ] For presentations that don't have breaks - helps plan timing
+  - [X] Add a Break "slide" that is not an actual slide 
+  - [X] For presentations that don't have breaks - helps plan timing
 
 
 ## 🎯 User Experience Improvements
@@ -119,7 +119,7 @@
 - [ ] Allow each slide to have a priority setting
 - [ ] If running behind - an AI could adjust remaining slide times to catch up based on priority
 - [ ] Sections (see above) can have their own priority settings
-- [ ] Need a way to tell the total time UP TO the current slide
+
 
 
 
