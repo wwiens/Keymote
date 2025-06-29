@@ -1,3 +1,6 @@
 Flask
 flask-socketio
-eventlet 
+eventlet
+pytest
+pytest-mock
+python-socketio[client] 
