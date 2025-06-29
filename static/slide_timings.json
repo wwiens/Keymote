@@ -1516,27 +1516,27 @@
         {
           "slide": 2,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 5
+          "actual_time_seconds": null
         },
         {
           "slide": 3,
           "estimated_time_seconds": 600,
-          "actual_time_seconds": 2
+          "actual_time_seconds": null
         },
         {
           "slide": 4,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": 4
+          "actual_time_seconds": null
         },
         {
           "slide": 5,
           "estimated_time_seconds": 30,
-          "actual_time_seconds": 4
+          "actual_time_seconds": null
         },
         {
           "slide": 6,
           "estimated_time_seconds": 60,
-          "actual_time_seconds": null
+          "actual_time_seconds": 6
         },
         {
           "slide": 7,

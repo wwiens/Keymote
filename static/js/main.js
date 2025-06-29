@@ -118,6 +118,9 @@ function resetHeaderToNoPresentationState() {
     // Update total time and slide display
     const totalTimeEl = document.getElementById('total-time-display');
     if (totalTimeEl) totalTimeEl.textContent = '-';
+    if (trackingDisplayEl) trackingDisplayEl.textContent = '-';
+    const timeLeftEl = document.getElementById('time-left-display');
+    if (timeLeftEl) timeLeftEl.textContent = '-';
     showInactiveSlideDisplay();
 
     // Clear the slide list and show a message
