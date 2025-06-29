@@ -33,7 +33,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 4px;
     text-align: center;
     position: relative;
     flex-shrink: 0;
@@ -390,7 +390,7 @@ body {
 
 /* Time Display */
 .time-display {
-    margin-bottom: 60px;
+    margin-bottom: 20px;
     display: flex;
     gap: 20px;
     align-items: stretch;
@@ -468,6 +468,7 @@ body {
     justify-content: center;
     align-items: center;
     text-align: center;
+    margin-bottom: 5px;
 }
 
 .time-info-group {
@@ -793,8 +794,6 @@ body {
     cursor: default;
 }
 
-
-
 /* Success feedback animation */
 .timing-updated {
     background: rgba(49, 151, 31, 0.2) !important;
@@ -912,7 +911,7 @@ body {
     }
 
     .header {
-        margin-bottom: 30px;
+        margin-bottom: 10px;
     }
     
     /* Mobile dropdown menu adjustments */
@@ -992,8 +991,7 @@ body {
     }
 
     .time-display {
-        gap: 12px;
-        margin-bottom: 30px;
+        margin-bottom: 10px;
     }
 
     .time-numbers {
@@ -1109,35 +1107,49 @@ body {
     .slides-container::-webkit-scrollbar {
         width: 3px;
     }
+
+    .main-time-numbers {
+        font-size: 80px;
+        height: auto;
+        min-height: unset;
+        max-height: 120px;
+    }
+    .main-time-hours,
+    .main-time-minutes,
+    .main-time-seconds {
+        font-size: 70px;
+    }
+    .main-time-colon {
+        font-size: 50px;
+        top: -4px;
+    }
 }
 
 .main-time-numbers {
     font-family: 'Bebas Neue', sans-serif;
     font-weight: 400;
-    font-size: 150px;
-    line-height: 1;
-    letter-spacing: 2px;
+    font-size: 240px;
+    letter-spacing: 5px;
     display: flex;
-    align-items: center;
     justify-content: center;
-    height: 100%;
-    width: 100%;
+    align-items: center;
+    color: #fff;
+    height: 180px;
+    line-height: 1;
 }
 
 .main-time-display {
-    font-size: 96px;
-    font-weight: 700;
-    font-family: 'Montserrat', sans-serif;
     text-align: center;
-    color: #31971f;
-    line-height: 0.8;
-    letter-spacing: 2px;
-    width: 100%;
-    display: block;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
 }
 
 .main-time-hours {
-    font-size: 150px;
+    font-size: 140px;
     font-weight: 400;
     font-family: 'Bebas Neue', 'Montserrat', sans-serif;
     color: #8e8e93;
@@ -1147,7 +1159,7 @@ body {
 }
 
 .main-time-minutes {
-    font-size: 150px;
+    font-size: 140px;
     font-weight: 400;
     font-family: 'Bebas Neue', 'Montserrat', sans-serif;
     color: #31971f;
@@ -1157,7 +1169,7 @@ body {
 }
 
 .main-time-seconds {
-    font-size: 150px;
+    font-size: 140px;
     font-weight: 400;
     font-family: 'Bebas Neue', 'Montserrat', sans-serif;
     color: #fff;
@@ -1167,15 +1179,7 @@ body {
 }
 
 .main-time-colon {
-    font-size: 100px;
-    font-weight: 400;
-    font-family: 'Bebas Neue', 'Montserrat', sans-serif;
-    color: #8e8e93;
-    text-align: center;
-    line-height: 1;
-    letter-spacing: 2px;
-    margin: 0 2px;
-    display: inline-block;
+    font-size: 160px;
     position: relative;
     top: -10px;
 }
@@ -1301,8 +1305,6 @@ body {
 #ok-file-open:hover:not(:disabled) {
     background-color: #ffc300;
 }
-
-
 
 .empty-state-message {
     text-align: center;
@@ -1455,4 +1457,23 @@ body {
   margin-left: 30px;
   margin-right: 0;
   letter-spacing: 1px;
+}
+
+.slide-info-row .label.yellow {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ffd60a;
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.slide-info-row {
+    margin-bottom: 2px !important;
+}
+
+.timer-below-info {
+    margin-top: 2px !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }

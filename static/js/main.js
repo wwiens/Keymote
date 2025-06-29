@@ -175,6 +175,7 @@ function updateSelectedSlideByIndex(idx) {
     currentSlideIdx = idx;
     slides[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
     updateMainTimeDisplay(elapsedSeconds);
+    updateTimeLeftDisplay();
     // Only start per-slide timer if in play mode
     if (isPlayMode) {
       startSlideTimer(idx);
@@ -272,6 +273,7 @@ function updatePresentationUI(data) {
 
                 updateSelectedSlideUI(api_data.slide_number);
                 updateSlideTimersUI();
+                updateTimeLeftDisplay();
 
             } else {
                 // No presentation is active.
@@ -349,6 +351,7 @@ function updateSlideListFromData(data) {
     }
     if (totalSlideNumberEl) totalSlideNumberEl.textContent = slideTimings.length;
     updateSlideTimersUI();
+    updateTimeLeftDisplay();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -560,6 +563,7 @@ function addBreakAfterCurrentSlide() {
       clearStuckEditingStates();
       // Refresh the slides UI
       updatePresentationUI(dataToSave);
+      updateTimeLeftDisplay();
       // Re-select the original slide (which is still at the same index)
       setTimeout(() => {
         updateSelectedSlideUI(currentSlideIdx + 1);
@@ -1055,6 +1059,7 @@ function finishEditingTime(timeInput, slideIndex, shouldSave, fallbackValue = nu
       setTimeout(() => {
         slideElement.classList.remove('timing-updated');
       }, 1000);
+      updateTimeLeftDisplay();
     } else {
       // Invalid input - revert to original value
       finalValue = formatMmSs(slideTimings[slideIndex].estimated_time_seconds);
@@ -1363,6 +1368,7 @@ function deleteBreakSlide(slideIndex) {
       clearStuckEditingStates();
       // Refresh the slides UI
       updatePresentationUI(dataToSave);
+      updateTimeLeftDisplay();
     } else {
       console.error('Failed to delete slide from backend');
       alert('Failed to delete the slide. Please try again.');
@@ -1372,4 +1378,17 @@ function deleteBreakSlide(slideIndex) {
     console.error('Error deleting slide:', err);
     alert('Error deleting the slide. Please try again.');
   });
+}
+
+function updateTimeLeftDisplay() {
+  const timeLeftEl = document.getElementById('time-left-display');
+  if (!timeLeftEl || !slideTimings || slideTimings.length === 0 || currentSlideIdx < 0 || currentSlideIdx >= slideTimings.length) {
+    if (timeLeftEl) timeLeftEl.textContent = '-';
+    return;
+  }
+  let totalLeft = 0;
+  for (let i = currentSlideIdx + 1; i < slideTimings.length; i++) {
+    totalLeft += slideTimings[i].estimated_time_seconds || 0;
+  }
+  timeLeftEl.textContent = formatTime(totalLeft);
 } 

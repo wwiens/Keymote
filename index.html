@@ -57,7 +57,7 @@
                <span class="menu-text">Close Presentation</span>
             </div>
          </div>
-         <div class="time-display" style="display:block;margin-bottom:60px;height:auto;margin-top:-15px;">
+         <div class="time-display" style="display:block;height:auto;margin-top:-5px;">
             <div class="main-time-numbers">
                <span id="main-time-hours" class="main-time-hours">0</span>
                <span class="main-time-colon">:</span>
@@ -65,23 +65,26 @@
                <span class="main-time-colon">:</span>
                <span id="main-time-seconds" class="main-time-seconds">00</span>
             </div>
-            <div class="timer-below-info" style="display:flex;justify-content:center;gap:40px;margin-top:-10px">
+            <div class="slide-info-row">
+               <div class="time-info">
+                  <span class="label yellow" id="slide-info-active">
+                     Slide <span id="current-slide-number">1</span> of <span id="total-slide-number">57</span>
+                  </span>
+                  <span class="label yellow" id="slide-info-inactive" style="display: none;">-</span>
+               </div>
+            </div>
+            <div class="timer-below-info">
                <div class="time-info">
                   <span class="label yellow">Total Time</span>
                   <span class="value white" id="total-time-display">1:06:00</span>
                </div>
                <div class="time-info">
-                  <span class="label yellow">Slide</span>
-                  <span class="value white">
-                    <span id="slide-info-active">
-                        <span id="current-slide-number">1</span> of <span id="total-slide-number">57</span>
-                    </span>
-                    <span id="slide-info-inactive" style="display: none;">-</span>
-                  </span>
-               </div>
-               <div class="time-info">
                   <span class="label yellow">Tracking</span>
                   <span class="value white" id="tracking-display">-</span>
+               </div>
+               <div class="time-info">
+                  <span class="label yellow">Time Left</span>
+                  <span class="value white" id="time-left-display">-</span>
                </div>
             </div>
          </div>
