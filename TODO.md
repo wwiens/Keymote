@@ -15,6 +15,10 @@
 - [ ] **Presentation Breaks**: Add a Break slide in between 2 existing slides
   - [X] Add a Break "slide" that is not an actual slide 
   - [X] For presentations that don't have breaks - helps plan timing
+  - [X] Allow users to delete a "Break"
+- [ ] Use AI to estimate the timing for slides
+  - [ ] Create an agent(s) to extract slide content and send it to LLM for estimation
+  - [ ] Agent can determine # of slides, extract each slide's content, and batch slides for LLM analysis
 
 
 ## 🎯 User Experience Improvements
@@ -59,10 +63,6 @@
   - [ ] Q&A time buffers
   - [ ] Interactive slide timing
   - [ ] Audience engagement detection
-- [ ] **Buffer Time Management**: Automatic buffer time calculation and alerts
-  - [ ] Smart buffer allocation
-  - [ ] Buffer consumption tracking
-  - [ ] Buffer adjustment recommendations
 - [ ] **Practice Mode**: Rehearsal mode with feedback and improvement suggestions
   - [ ] Practice session recording
   - [ ] Performance comparison
@@ -73,6 +73,12 @@
   - [ ] Virtual background with timing info
   - [ ] Chat bot for timing updates
   - [ ] Meeting integration APIs
+- [ ] **Clock/timer**: Display a clock or timer for breaks and share via Zoom
+  - [ ] Countdown timer for breaks
+  - [ ] Auto-share as a Zoom screen
+- [ ] **Auto polls**: Run polls based on slide content
+  - [ ] For sldies that have mutliple-choice questions, run a poll based on them
+  - [ ] Would use AI to do this work
 
 
 ## 📊 Advanced Monitoring & Control
@@ -118,6 +124,16 @@
 - [ ] Allow each slide to have a priority setting
 - [ ] If running behind - an AI could adjust remaining slide times to catch up based on priority
 - [ ] Sections (see above) can have their own priority settings
+
+
+### 15. Testing
+- [ ] Create test plans and tools
+
+
+### 16. Presentation Notes
+- [ ] Need a way to display presentation notes
+
+
 
 
 

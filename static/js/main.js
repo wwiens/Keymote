@@ -20,6 +20,15 @@ const slideInfoInactiveEl = document.getElementById('slide-info-inactive');
 const hamburgerMenu = document.getElementById('hamburger-menu');
 const dropdownMenu = document.getElementById('dropdown-menu');
 
+// --- EDIT TIME OVERLAY ELEMENTS ---
+const editTimeOverlay = document.getElementById('edit-time-overlay');
+const editElapsedTimeMenu = document.getElementById('edit-elapsed-time-menu');
+const cancelEditTimeBtn = document.getElementById('cancel-edit-time');
+const saveEditTimeBtn = document.getElementById('save-edit-time');
+const editHoursInput = document.getElementById('edit-hours');
+const editMinutesInput = document.getElementById('edit-minutes');
+const editSecondsInput = document.getElementById('edit-seconds');
+
 // --- FILE OPEN OVERLAY ELEMENTS ---
 const openPresentationMenu = document.getElementById('open-presentation-menu');
 const addBreakMenu = document.getElementById('add-break-menu');
@@ -49,6 +58,23 @@ function formatTime(secs) {
   const m = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
   return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+function saveElapsedTimeToBackend(seconds) {
+    fetch('/api/save_elapsed_time', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ elapsed_seconds: seconds }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status !== 'success') {
+            console.error('Failed to save elapsed time:', data.message);
+        }
+    })
+    .catch(error => console.error('Error saving elapsed time:', error));
 }
 
 // --- SLIDE SELECTION FUNCTIONALITY ---
@@ -357,6 +383,134 @@ function updateSlideListFromData(data) {
     updateTimeLeftDisplay();
 }
 
+function setupEventListeners() {
+    // Hamburger Menu
+    if (hamburgerMenu) {
+        hamburgerMenu.addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevent the document click from closing it immediately
+            if (dropdownMenu) dropdownMenu.classList.toggle('show');
+            hamburgerMenu.classList.toggle('active');
+        });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (event) => {
+        if (dropdownMenu && dropdownMenu.classList.contains('show') && !hamburgerMenu.contains(event.target) && !dropdownMenu.contains(event.target)) {
+            dropdownMenu.classList.remove('show');
+            if (hamburgerMenu) hamburgerMenu.classList.remove('active');
+        }
+    });
+
+    // Main Controls
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', () => {
+            if (isPlayMode) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        });
+    }
+    if (nextBtn) nextBtn.addEventListener('click', navigateToNextSlide);
+    if (previousBtn) previousBtn.addEventListener('click', navigateToPreviousSlide);
+
+    // File Open Overlay
+    if (openPresentationMenu) {
+        openPresentationMenu.addEventListener('click', () => {
+            openFileOpenOverlay();
+            if (dropdownMenu) dropdownMenu.classList.remove('active');
+        });
+    }
+    if (cancelFileOpenBtn) cancelFileOpenBtn.addEventListener('click', closeFileOpenOverlay);
+    if (okFileOpenBtn) {
+        okFileOpenBtn.addEventListener('click', () => {
+            if (selectedFilePath) {
+                openPresentation(selectedFilePath);
+            }
+        });
+    }
+    if (fileBrowserBackBtn) {
+        fileBrowserBackBtn.addEventListener('click', () => {
+            const parentDir = currentBrowserPath.substring(0, currentBrowserPath.lastIndexOf('/')) || '.';
+            browseDirectory(parentDir);
+        });
+    }
+    
+    // Presentation Actions
+    if (addBreakMenu) {
+        addBreakMenu.addEventListener('click', () => {
+            addBreakAfterCurrentSlide();
+            if (dropdownMenu) dropdownMenu.classList.remove('active');
+        });
+    }
+    if (stopPresentationMenu) {
+        stopPresentationMenu.addEventListener('click', () => {
+            fetch('/api/stop_presentation', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log("Presentation stopped successfully from menu.");
+                        resetHeaderForStoppedPresentation();
+                    } else {
+                        console.error("Failed to stop presentation:", data.message);
+                    }
+                });
+            if (dropdownMenu) dropdownMenu.classList.remove('active');
+        });
+    }
+    if (closePresentationMenu) {
+        closePresentationMenu.addEventListener('click', () => {
+            fetch('/api/close_presentation', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log("Presentation closed successfully from menu.");
+                        resetHeaderToNoPresentationState();
+                    } else {
+                        console.error("Failed to close presentation:", data.message);
+                    }
+                });
+            if (dropdownMenu) dropdownMenu.classList.remove('active');
+        });
+    }
+
+    // Edit Time Overlay
+    if (editElapsedTimeMenu) {
+        editElapsedTimeMenu.addEventListener('click', () => {
+            openEditTimeOverlay();
+            if (dropdownMenu) dropdownMenu.classList.remove('active');
+        });
+    }
+    if (cancelEditTimeBtn) {
+        cancelEditTimeBtn.addEventListener('click', closeEditTimeOverlay);
+    }
+    if (saveEditTimeBtn) {
+        saveEditTimeBtn.addEventListener('click', saveEditedTime);
+    }
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (event) => {
+        if (event.target.tagName === 'INPUT') return; // Ignore when typing in inputs
+
+        switch (event.key) {
+            case 'ArrowRight':
+                navigateToNextSlide();
+                break;
+            case 'ArrowLeft':
+                navigateToPreviousSlide();
+                break;
+            case ' ': // Space bar
+                event.preventDefault(); // Prevent page scroll
+                if (isPlayMode) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+                break;
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   // Hamburger Menu Toggle
   if (hamburgerMenu) {
@@ -371,16 +525,16 @@ document.addEventListener('DOMContentLoaded', function() {
   document.addEventListener('click', (event) => {
     if (dropdownMenu && dropdownMenu.classList.contains('show') && !hamburgerMenu.contains(event.target) && !dropdownMenu.contains(event.target)) {
         dropdownMenu.classList.remove('show');
-        hamburgerMenu.classList.remove('active');
+        if (hamburgerMenu) hamburgerMenu.classList.remove('active');
     }
   });
 
   if (openPresentationMenu) {
-    openPresentationMenu.addEventListener('click', () => {
-      openFileOpenOverlay();
+      openPresentationMenu.addEventListener('click', () => {
+          openFileOpenOverlay();
       if (dropdownMenu) dropdownMenu.classList.remove('show');
       if (hamburgerMenu) hamburgerMenu.classList.remove('active');
-    });
+      });
   }
 
   if (addBreakMenu) {
@@ -396,25 +550,26 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   if (okFileOpenBtn) {
-    okFileOpenBtn.addEventListener('click', () => {
-        if (selectedFilePath) {
-            openPresentation(selectedFilePath);
-        }
-    });
+      okFileOpenBtn.addEventListener('click', () => {
+          if (selectedFilePath) {
+              openPresentation(selectedFilePath);
+          }
+      });
   }
 
   if (fileBrowserBackBtn) {
-    fileBrowserBackBtn.addEventListener('click', () => {
+      fileBrowserBackBtn.addEventListener('click', () => {
       if (currentBrowserPath && currentBrowserPath !== '.') {
         const parentPath = currentBrowserPath.substring(0, currentBrowserPath.lastIndexOf('/')) || '.';
         browseDirectory(parentPath);
       }
-    });
+      });
   }
 
   if (stopPresentationMenu) {
-    stopPresentationMenu.addEventListener('click', () => {
-        fetch('/api/stop_presentation', { method: 'POST' })
+      stopPresentationMenu.addEventListener('click', () => {
+          // Send request to server to stop presentation
+          fetch('/api/stop_presentation', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
                 if (data.status !== 'success') {
@@ -428,11 +583,12 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => console.error('Error stopping presentation:', err));
         if (dropdownMenu) dropdownMenu.classList.remove('show');
         if (hamburgerMenu) hamburgerMenu.classList.remove('active');
-    });
+      });
   }
 
   if (closePresentationMenu) {
     closePresentationMenu.addEventListener('click', () => {
+        // Send request to server to close presentation
         fetch('/api/close_presentation', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
@@ -492,6 +648,10 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(err => {
       console.error('Could not load slide timings:', err);
+      // Display an error message in the slide container
+      if (slidesContainer) {
+          slidesContainer.innerHTML = '<div class="error-message">Could not load presentation data.</div>';
+      }
     });
 
   // Initialize display on load
@@ -719,44 +879,14 @@ function updateMainTimeDisplay(secs) {
 }
 
 function pauseTimer() {
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
-    timerRunning = false;
-    if (playPauseIcon) playPauseIcon.src = 'static/images/008-play-button.png';
-    showInactiveSlideDisplay(); // Exit presentation mode UI
-    updateMainTimeDisplay(elapsedSeconds); // Show frozen values
-    // Also stop Keynote presentation mode on the server
-    fetch('/api/stop_presentation', { method: 'POST' })
-        .then(response => {
-            if (!response.ok) {
-                response.json().then(data => console.error('Failed to stop presentation:', data.message));
-            }
-        })
-        .catch(error => console.error('Error calling stop_presentation API:', error));
-}
-
-if (playPauseBtn) {
-  playPauseBtn.addEventListener('click', function() {
     if (timerRunning) {
-      pauseTimer();
-    } else {
-      startTimer();
+        clearInterval(timerInterval);
+        timerRunning = false;
+        playPauseIcon.src = 'static/images/008-play-button.png';
+        playPauseIcon.alt = 'Play';
+        isPlayMode = false;
+        stopSlideTimer();
     }
-  });
-}
-
-// --- Smart next/previous button logic that handles breaks ---
-if (nextBtn) {
-  nextBtn.addEventListener('click', function() {
-    navigateToNextSlide();
-  });
-}
-if (previousBtn) {
-  previousBtn.addEventListener('click', function() {
-    navigateToPreviousSlide();
-  });
 }
 
 function navigateToNextSlide() {
@@ -1139,8 +1269,6 @@ function parseTimeInput(timeStr) {
   return null;
 }
 
-
-
 // --- FILE OPEN FUNCTIONALITY ---
 function browseDirectory(path) {
   currentBrowserPath = path;
@@ -1394,4 +1522,36 @@ function updateTimeLeftDisplay() {
     totalLeft += slideTimings[i].estimated_time_seconds || 0;
   }
   timeLeftEl.textContent = formatTime(totalLeft);
+}
+
+// --- EDIT TIME OVERLAY ---
+function openEditTimeOverlay() {
+    // Populate with current elapsed time
+    const h = Math.floor(elapsedSeconds / 3600);
+    const m = Math.floor((elapsedSeconds % 3600) / 60);
+    const s = elapsedSeconds % 60;
+
+    editHoursInput.value = h;
+    editMinutesInput.value = m;
+    editSecondsInput.value = s;
+
+    if (editTimeOverlay) editTimeOverlay.style.display = 'flex';
+}
+
+function closeEditTimeOverlay() {
+    if (editTimeOverlay) editTimeOverlay.style.display = 'none';
+}
+
+function saveEditedTime() {
+    const hours = parseInt(editHoursInput.value, 10) || 0;
+    const minutes = parseInt(editMinutesInput.value, 10) || 0;
+    const seconds = parseInt(editSecondsInput.value, 10) || 0;
+
+    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+
+    elapsedSeconds = totalSeconds;
+    updateMainTimeDisplay(elapsedSeconds);
+    saveElapsedTimeToBackend(elapsedSeconds);
+
+    closeEditTimeOverlay();
 } 

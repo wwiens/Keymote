@@ -1910,7 +1910,7 @@
         },
         {
           "slide": 2,
-          "estimated_time_seconds": 60,
+          "estimated_time_seconds": 30,
           "actual_time_seconds": null
         },
         {
@@ -1925,7 +1925,7 @@
         },
         {
           "slide": 5,
-          "estimated_time_seconds": 60,
+          "estimated_time_seconds": 30,
           "actual_time_seconds": null
         },
         {
@@ -1985,12 +1985,12 @@
         },
         {
           "slide": 17,
-          "estimated_time_seconds": 60,
+          "estimated_time_seconds": 120,
           "actual_time_seconds": null
         },
         {
           "slide": 18,
-          "estimated_time_seconds": 60,
+          "estimated_time_seconds": 120,
           "actual_time_seconds": null
         },
         {
@@ -2105,7 +2105,7 @@
         },
         {
           "slide": 41,
-          "estimated_time_seconds": 60,
+          "estimated_time_seconds": 120,
           "actual_time_seconds": null
         },
         {
@@ -2125,6 +2125,11 @@
         },
         {
           "slide": 45,
+          "estimated_time_seconds": 900,
+          "actual_time_seconds": null
+        },
+        {
+          "slide": "BREAK",
           "estimated_time_seconds": 900,
           "actual_time_seconds": null
         },
@@ -2266,5 +2271,5 @@
       ]
     }
   },
-  "current_presentation_id": "Documents/Documents/SimpliLearn/L1-Research.key"
+  "current_presentation_id": "Documents/Documents/SimpliLearn/L2-Research.key"
 }
